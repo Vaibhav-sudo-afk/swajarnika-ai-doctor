@@ -155,7 +155,6 @@ pyttsx3==2.90
 pytz==2025.1
 PyVirtualDisplay==3.0
 pywinpty==2.0.12
-PyYAML==6.0.2
 pyzmq==26.2.1
 qtconsole==5.5.1
 QtPy==2.4.1
