@@ -12,7 +12,6 @@ asgiref==3.8.1
 asttokens==3.0.0
 async-lru==2.0.4
 attrs==25.1.0
-axios==0.4.0
 babel==2.17.0
 beautifulsoup4==4.13.3
 bleach==6.2.0
@@ -33,9 +32,7 @@ confection==0.1.4
 confusable-homoglyphs==3.3.1
 contourpy==1.2.0
 cryptography==44.0.0
-cv==1.0.0
 cycler==0.12.1
-cymem==2.0.8
 debugpy==1.8.12
 decorator==5.1.1
 defusedxml==0.7.1
@@ -59,7 +56,6 @@ et-xmlfile==1.1.0
 executing==2.2.0
 fastjsonschema==2.21.1
 filelock==3.13.3
-flatbuffers==23.5.26
 fonttools==4.49.0
 fqdn==1.5.1
 frozenlist==1.4.1
@@ -76,7 +72,6 @@ ipykernel==6.29.5
 ipython==8.32.0
 ipywidgets==8.1.1
 isoduration==20.11.0
-jax==0.4.25
 jedi==0.19.2
 Jinja2==3.1.5
 joblib==1.4.2
@@ -107,11 +102,8 @@ matplotlib-inline==0.1.7
 mdurl==0.1.2
 mediapipe==0.10.10
 mistune==3.1.1
-ml-dtypes==0.3.2
 multidict==6.0.5
 murmurhash==1.0.10
-mysql==0.0.3
-mysql-connector==2.2.9
 mysql-connector-python==8.0.33
 mysqlclient==2.2.0
 nbclient==0.10.2
@@ -133,9 +125,7 @@ overrides==7.7.0
 packaging==24.2
 pandas==1.5.3
 pandocfilters==1.5.1
-panndas==0.0.2
 parso==0.8.4
-php==1.2.1
 pillow==11.1.0
 platformdirs==4.3.6
 preshed==3.0.9
@@ -150,7 +140,6 @@ pycaw==20240210
 pycountry==23.12.11
 pycparser==2.22
 pydantic==2.6.1
-pydantic_core==2.16.2
 pygame==2.5.0
 Pygments==2.19.1
 PyJWT==2.10.1
@@ -178,7 +167,6 @@ requests-oauthlib==2.0.0
 rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rich==13.7.1
-rpds-py==0.22.3
 scipy==1.12.0
 selenium==4.27.1
 Send2Trash==1.8.3
@@ -218,7 +206,6 @@ urllib3==2.3.0
 virtualenv==20.25.1
 wasabi==1.1.2
 wcwidth==0.2.13
-weasel==0.3.4
 webcolors==24.11.1
 webencodings==0.5.1
 websocket-client==1.8.0
