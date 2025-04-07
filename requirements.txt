@@ -112,7 +112,7 @@ multidict==6.0.5
 murmurhash==1.0.10
 mysql==0.0.3
 mysql-connector==2.2.9
-mysql-connector-python==8.2.0
+mysql-connector-python==8.0.33
 mysqlclient==2.2.0
 nbclient==0.10.2
 nbconvert==7.16.6
@@ -121,7 +121,7 @@ nest-asyncio==1.6.0
 nltk==3.8.1
 notebook==7.0.6
 notebook_shim==0.2.3
-numpy==2.2.3
+numpy==1.24.4
 oauthlib==3.2.2
 openai==0.28.0
 opencv-contrib-python==4.9.0.80
@@ -131,7 +131,7 @@ opt-einsum==3.3.0
 outcome==1.3.0.post0
 overrides==7.7.0
 packaging==24.2
-pandas==2.2.3
+pandas==1.5.3
 pandocfilters==1.5.1
 panndas==0.0.2
 parso==0.8.4
