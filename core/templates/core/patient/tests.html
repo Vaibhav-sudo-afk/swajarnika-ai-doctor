@@ -4,7 +4,7 @@
 <style>
     /* Import Google Fonts for improved typography */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-    
+
     /* Color Variables - Modern Bluish-Gray Theme */
     :root {
         --primary-color: #4f46e5;
@@ -12,7 +12,6 @@
         --bg-color: #1f2937;
         --container-bg: #111827;
         --border-color: #374151;
-        --header-bg: #111827;
         --text-primary: #f9fafb;
         --text-secondary: #e5e7eb;
         --text-muted: #9ca3af;
@@ -23,162 +22,14 @@
         --card-header-bg: #111827;
         --shadow-color: rgba(0, 0, 0, 0.4);
         --table-header-bg: #2d3748;
-        --header-height: 60px;
-        --footer-height: 0px;
-    }
-
-    /* Hide the base navbar */
-    .navbar.navbar-expand-lg.navbar-dark.bg-primary {
-        display: none !important;
     }
 
     /* Base styles */
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
+    .dashboard-content {
         background-color: var(--bg-color);
         color: var(--text-primary);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-
-    /* Container overrides */
-    .container {
-        max-width: 100% !important;
-        padding: 0 !important;
-        height: 100vh;
-        overflow: hidden;
-        margin: 0 !important;
-    }
-
-    #content {
-        margin-top: 0;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        position: relative;
-        padding: 0;
-    }
-
-    /* Header */
-    .page-header {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1.5rem;
-        background-color: var(--header-bg);
-        color: var(--text-primary);
-        border-bottom: 1px solid var(--border-color);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        height: var(--header-height);
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        z-index: 100;
-    }
-
-    .page-brand {
-        display: flex;
-        align-items: center;
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        text-decoration: none;
-    }
-    
-    .page-brand i {
-        margin-right: 0.5rem;
-        font-size: 1.3rem;
-    }
-    
-    .page-title {
-        margin-left: 1.5rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        border-left: 1px solid var(--border-color);
-        padding-left: 1.5rem;
-    }
-    
-    .page-title i {
-        margin-right: 0.5rem;
-    }
-
-    /* Nav links */
-    .header-nav-links {
-        display: flex;
-        margin-left: auto;
-    }
-    
-    .header-nav-link {
-        color: var(--text-primary);
-        text-decoration: none;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.8rem;
-        border-radius: 0.25rem;
-        transition: background-color 0.2s;
-        display: flex;
-        align-items: center;
-    }
-    
-    .header-nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: var(--text-primary);
-    }
-    
-    .header-nav-link i {
-        margin-right: 0.25rem;
-    }
-
-    /* User menu */
-    .user-menu {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-    }
-    
-    .header-button {
-        background: none;
-        border: none;
-        color: var(--text-primary);
-        cursor: pointer;
-        margin-left: 0.5rem;
-        width: 2rem;
-        height: 2rem;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    
-    .header-button:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    /* Main content area */
-    .page-content {
-        padding: 0 3rem;
-        margin-top: var(--header-height);
-        height: calc(100vh - var(--header-height) - var(--footer-height));
-        overflow-y: auto;
-        background-color: var(--bg-color);
-    }
-
-    .page-content::-webkit-scrollbar {
-        width: 0.25rem;
-    }
-    
-    .page-content::-webkit-scrollbar-track {
-        background: var(--bg-color);
-    }
-    
-    .page-content::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-        border-radius: 0.25rem;
+        padding: 2rem;
     }
 
     /* Page title section */
@@ -198,7 +49,7 @@
         display: flex;
         align-items: center;
     }
-    
+
     .section-title i {
         margin-right: 0.75rem;
         color: var(--primary-color);
@@ -289,119 +140,56 @@
         color: var(--text-muted);
     }
 
-    /* Hide footer */
-    .footer {
-        display: none !important;
-    }
-    
     @media (max-width: 768px) {
-        .header-nav-links {
-            display: none;
-        }
-        
-        .page-content {
-            padding: 0 1rem;
+        .dashboard-content {
+            padding: 1rem;
         }
     }
 </style>
 {% endblock extra_css %}
 
 {% block content %}
-<div class="page-container">
-    <!-- Header -->
-    <div class="page-header">
-        <a href="/" class="page-brand">
-            <i class="fas fa-hospital-user"></i>Swajarnika
+<div class="dashboard-content">
+    <div class="page-title-section">
+        <h1 class="section-title">
+            <i class="fas fa-vial"></i> My Tests
+        </h1>
+        <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
-        <div class="page-title">
-            <i class="fas fa-vial"></i> Tests
-        </div>
-        
-        <!-- Navigation Links -->
-        <div class="header-nav-links">
-            <a class="header-nav-link" href="{% url 'patient_dashboard' %}">
-                <i class="fas fa-columns"></i> Dashboard
-            </a>
-            <a class="header-nav-link" href="{% url 'patient_medications' %}">
-                <i class="fas fa-pills"></i> Medications
-            </a>
-            <a class="header-nav-link" href="{% url 'patient_tests' %}">
-                <i class="fas fa-vial"></i> Tests
-            </a>
-            <a class="header-nav-link" href="{% url 'patient_files' %}">
-                <i class="fas fa-file-medical"></i> Files
-            </a>
-            <a class="header-nav-link" href="{% url 'patient_ai_chat' %}">
-                <i class="fas fa-robot"></i> AI Assistant
-            </a>
-        </div>
-        
-        <div class="user-menu">
-            <!-- Patient name and info in the header -->
-            <span style="font-size: 0.8rem; color: var(--text-muted); margin-right: 0.5rem;">
-                <i class="fas fa-user-circle"></i>
-                {{ user.patient.name }}
-            </span>
-            
-            <!-- Logout dropdown -->
-            <div class="dropdown" style="display: inline-block;">
-                <button class="header-button" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="background-color: var(--container-bg); border-color: var(--border-color);">
-                    <li>
-                        <a class="dropdown-item" href="{% url 'logout' %}" style="color: var(--text-primary);">
-                            <i class="fas fa-sign-out-alt me-1"></i> Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="page-content">
-        <div class="page-title-section">
-            <h1 class="section-title">
-                <i class="fas fa-vial"></i> My Tests
-            </h1>
-            <a href="{% url 'patient_dashboard' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
-        
-        <div class="content-card">
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date Ordered</th>
-                            <th>Test Name</th>
-                            <th>Region</th>
-                            <th>Reason</th>
-                            <th>Result</th>
-                            <th>Doctor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for test in tests %}
-                        <tr>
-                            <td>{{ test.visit.date_of_visit|date:"M d, Y" }}</td>
-                            <td>{{ test.test_name }}</td>
-                            <td>{{ test.region|default:"-" }}</td>
-                            <td>{{ test.reason }}</td>
-                            <td>{{ test.result|default:"Pending" }}</td>
-                            <td>Dr. {{ test.visit.doctor.name }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="empty-state">No tests found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <div class="content-card">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date Ordered</th>
+                        <th>Test Name</th>
+                        <th>Region</th>
+                        <th>Reason</th>
+                        <th>Result</th>
+                        <th>Doctor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for test in tests %}
+                    <tr>
+                        <td>{{ test.visit.date_of_visit|date:"M d, Y" }}</td>
+                        <td>{{ test.test_name }}</td>
+                        <td>{{ test.region|default:"-" }}</td>
+                        <td>{{ test.reason }}</td>
+                        <td>{{ test.result|default:"Pending" }}</td>
+                        <td>Dr. {{ test.visit.doctor.name }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">No tests found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

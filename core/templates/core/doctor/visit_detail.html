@@ -1,0 +1,226 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-calendar-check me-2"></i>Visit Details</h2>
+        <div>
+            {% if not is_edit %}
+            <a href="{% url 'doctor_visit_update' visit.id %}" class="btn btn-primary me-2">
+                <i class="fas fa-edit me-1"></i>Edit Visit
+            </a>
+            {% endif %}
+            <a href="{% url 'doctor_patient_detail' visit.patient.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Patient
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" action="{% if is_edit %}{% url 'doctor_visit_update' visit.id %}{% endif %}">
+        {% csrf_token %}
+        <!-- Visit Information Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-info-circle me-2"></i>Visit Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" name="date_of_visit"
+                                value="{{ visit.date_of_visit|date:'Y-m-d' }}" {% if not is_edit %}disabled{% endif %}>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Patient</label>
+                            <input type="text" class="form-control" value="{{ visit.patient.name }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Diagnosis</label>
+                            <textarea class="form-control" name="diagnosis" rows="4" {% if not is_edit %}disabled{% endif%}>{{ visit.diagnosis }}</textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Treatment Plan</label>
+                            <textarea class="form-control" name="treatment_plan" rows="4" {% if not is_edit %}disabled{%endif %}>{{ visit.treatment_plan }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes</label>
+                            <textarea class="form-control" name="notes" rows="4" {% if not is_edit %}disabled{% endif%}>{{ visit.notes }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medications Card -->
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="fas fa-pills me-2"></i>Prescribed Medications</h3>
+                {% if is_edit %}
+                <button type="button" class="btn btn-primary btn-sm" onclick="addMedication()">
+                    <i class="fas fa-plus me-1"></i>Add Medication
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div id="medications-container">
+                    {% for medication in medications %}
+                    <div class="medication-entry mb-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" name="medication_name[]"
+                                    value="{{ medication.medication_name }}" placeholder="Medication Name" {% if not is_edit %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" name="medication_instructions[]"
+                                    value="{{ medication.instructions }}" placeholder="Instructions" {% if not is_edit%}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" name="medication_missed_instructions[]"
+                                    value="{{ medication.missed_dose_instructions }}"
+                                    placeholder="Missed Dose Instructions" {% if not is_edit %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" class="form-control" name="medication_reason[]"
+                                    value="{{ medication.reason }}" placeholder="Reason" {% if not is_edit %}disabled{% endif %}>
+                            </div>
+                            {% if is_edit %}
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeMedication(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">No medications prescribed yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tests Card -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="fas fa-vial me-2"></i>Ordered Tests</h3>
+                {% if is_edit %}
+                <button type="button" class="btn btn-primary btn-sm" onclick="addTest()">
+                    <i class="fas fa-plus me-1"></i>Add Test
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div id="tests-container">
+                    {% for test in tests %}
+                    <div class="test-entry mb-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="test_name[]" value="{{ test.test_name }}"
+                                    placeholder="Test Name" {% if not is_edit %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" name="test_region[]" value="{{ test.region }}"
+                                    placeholder="Region" {% if not is_edit %}disabled{% endif %}>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="test_reason[]" value="{{ test.reason }}"
+                                    placeholder="Reason" {% if not is_edit %}disabled{% endif %}>
+                            </div>
+                            {% if is_edit %}
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeTest(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if is_edit %}
+        <div class="d-flex justify-content-end mb-4">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save me-1"></i>Save Changes
+            </button>
+        </div>
+        {% endif %}
+    </form>
+
+    <!-- Files section remains unchanged -->
+    {% include "core/doctor/partials/files_section.html" %}
+</div>
+
+{% block extra_js %}
+<script>
+    function addMedication() {
+        const container = document.getElementById('medications-container');
+        const template = `
+        <div class="medication-entry mb-3">
+            <div class="row">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="medication_name[]" placeholder="Medication Name">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="medication_instructions[]" placeholder="Instructions">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="medication_missed_instructions[]" placeholder="Missed Dose Instructions">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="medication_reason[]" placeholder="Reason">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeMedication(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+        container.insertAdjacentHTML('beforeend', template);
+    }
+
+    function removeMedication(button) {
+        button.closest('.medication-entry').remove();
+    }
+
+    function addTest() {
+        const container = document.getElementById('tests-container');
+        const template = `
+        <div class="test-entry mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="test_name[]" placeholder="Test Name">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="test_region[]" placeholder="Region">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="test_reason[]" placeholder="Reason">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeTest(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+        container.insertAdjacentHTML('beforeend', template);
+    }
+
+    function removeTest(button) {
+        button.closest('.test-entry').remove();
+    }
+</script>
+{% endblock %}
+{% endblock %}

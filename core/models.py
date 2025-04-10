@@ -84,8 +84,10 @@ class FileUpload(models.Model):
 
 class AIPrompt(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    visit = models.ForeignKey(Visit, on_delete=models.CASCADE)
-    prompt = models.TextField()
+    visit = models.ForeignKey(Visit, on_delete=models.CASCADE, null=True, blank=True)
+    prompt_text = models.TextField(default='')  # Added default
+    response_text = models.TextField(default='')  # Added default
+    context_used = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

@@ -45,7 +45,7 @@ class FileUploadSerializer(serializers.ModelSerializer):
 class AIPromptSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIPrompt
-        fields = ['id', 'patient', 'visit', 'prompt', 'created_at']
+        fields = ['id', 'patient', 'visit', 'prompt_text', 'response_text', 'context_used', 'created_at']
 
 class PatientRegisterSerializer(serializers.ModelSerializer):
     class Meta:

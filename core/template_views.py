@@ -328,14 +328,14 @@ def doctor_patient_add(request):
         gender = request.POST.get('gender')
         phone = request.POST.get('phone')
         address = request.POST.get('address')
-
+        doctor = request.user.doctor
         password = generate_password()
 
         try:
             User = get_user_model()
             # Check if user already exists
             if User.objects.filter(username=phone).exists():
-                return render(request, 'core/doctor/patient_add.html')
+                return render(request, 'core/doctor/dashboard.html')
 
             # Create user with is_patient flag
             user = User.objects.create_user(
@@ -347,7 +347,7 @@ def doctor_patient_add(request):
             # Create patient profile
             patient = Patient.objects.create(
                 user=user,
-                doctor=request.user.doctor,
+                doctor=doctor,
                 name=name,
                 date_of_birth=datetime.strptime(
                     date_of_birth, '%Y-%m-%d').date(),
@@ -470,6 +470,70 @@ def doctor_visit_detail(request, visit_id):
 
 
 @doctor_required
+def doctor_visit_update(request, visit_id):
+    visit = get_object_or_404(Visit, id=visit_id, doctor=request.user.doctor)
+    medications = Medication.objects.filter(visit=visit)
+    tests = Test.objects.filter(visit=visit)
+
+    if request.method == 'POST':
+        try:
+            # Update visit details
+            visit.date_of_visit = datetime.strptime(request.POST.get('date_of_visit'), '%Y-%m-%d').date()
+            visit.diagnosis = request.POST.get('diagnosis')
+            visit.treatment_plan = request.POST.get('treatment_plan')
+            visit.notes = request.POST.get('notes', '')
+            visit.save()
+
+            # Handle medications
+            # First delete existing medications
+            medications.delete()
+            medication_names = request.POST.getlist('medication_name[]')
+            medication_reasons = request.POST.getlist('medication_reason[]')
+            medication_instructions = request.POST.getlist('medication_instructions[]')
+            medication_missed_instructions = request.POST.getlist('medication_missed_instructions[]')
+
+            for i in range(len(medication_names)):
+                if medication_names[i]:
+                    Medication.objects.create(
+                        visit=visit,
+                        medication_name=medication_names[i],
+                        reason=medication_reasons[i],
+                        instructions=medication_instructions[i],
+                        missed_dose_instructions=medication_missed_instructions[i]
+                    )
+
+            # Handle tests
+            # First delete existing tests
+            tests.delete()
+            test_names = request.POST.getlist('test_name[]')
+            test_regions = request.POST.getlist('test_region[]')
+            test_reasons = request.POST.getlist('test_reason[]')
+
+            for i in range(len(test_names)):
+                if test_names[i]:
+                    Test.objects.create(
+                        visit=visit,
+                        test_name=test_names[i],
+                        region=test_regions[i],
+                        reason=test_reasons[i]
+                    )
+
+            return redirect('doctor_visit_detail', visit_id=visit.id)
+
+        except Exception as e:
+            print(f"Error updating visit: {str(e)}")
+            return redirect('doctor_visit_detail', visit_id=visit.id)
+
+    context = {
+        'visit': visit,
+        'medications': medications,
+        'tests': tests,
+        'is_edit': True
+    }
+    return render(request, 'core/doctor/visit_detail.html', context)
+
+
+@doctor_required
 def doctor_patient_delete(request, patient_id):
     if request.method == 'POST':
         patient = get_object_or_404(
@@ -550,126 +614,6 @@ def doctor_file_delete(request, file_id):
     return redirect('doctor_patient_detail', patient_id=patient_id)
 
 
-# @patient_required
-# def patient_ai_chat(request):
-#     """AI chat view for patients - using Akash API"""
-#     patient = request.user.patient
-
-#     # Check if this is an AJAX request
-#     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-
-#     # Handle reset chat
-#     if request.method == 'POST' and 'reset_chat' in request.POST:
-#         AIChatMessage.objects.filter(patient=patient).delete()
-
-#         # Create a welcome message
-#         greeting = "Hello! I'm your AI health assistant. How can I help you today?"
-#         AIChatMessage.objects.create(
-#             patient=patient,
-#             message=greeting,
-#             is_ai=True
-#         )
-#         return redirect('patient_ai_chat')
-
-#     # Handle new message
-#     elif request.method == 'POST' and 'message' in request.POST:
-#         user_message = request.POST.get('message', '').strip()
-
-#         if user_message:
-#             # Save user message
-#             AIChatMessage.objects.create(
-#                 patient=patient,
-#                 message=user_message,
-#                 is_ai=False
-#             )
-
-#             try:
-#                 # Format messages for Akash API
-#                 formatted_messages = format_chat_messages(
-#                     patient, user_message)
-
-#                 # Get AI response from Akash API
-#                 ai_response = query_akash_chat(formatted_messages)
-
-#                 # Save AI response
-#                 AIChatMessage.objects.create(
-#                     patient=patient,
-#                     message=ai_response,
-#                     is_ai=True
-#                 )
-
-#                 # If this is an AJAX request, return JSON response
-#                 if is_ajax:
-#                     response_data = {
-#                         'success': True,
-#                         'message': ai_response
-#                     }
-#                     return HttpResponse(
-#                         json.dumps(response_data),
-#                         content_type='application/json'
-#                     )
-
-#                 # Otherwise redirect to the chat page
-#                 return redirect('patient_ai_chat')
-
-#             except Exception as e:
-#                 import traceback
-#                 error_details = traceback.format_exc()
-#                 print(f"AI Chat Error: {str(e)}\n{error_details}")
-
-#                 # In case of error, provide a fallback message
-#                 error_message = f"Sorry, I'm having trouble processing your request: {str(e)}"
-#                 AIChatMessage.objects.create(
-#                     patient=patient,
-#                     message=error_message,
-#                     is_ai=True
-#                 )
-
-#                 # If this is an AJAX request, return JSON response with error
-#                 if is_ajax:
-#                     response_data = {
-#                         'success': False,
-#                         'error': str(e),
-#                         'message': error_message
-#                     }
-#                     return HttpResponse(
-#                         json.dumps(response_data),
-#                         content_type='application/json'
-#                     )
-
-#                 # Otherwise redirect to the chat page
-#                 return redirect('patient_ai_chat')
-
-#     # Get messages for display
-#     messages = AIChatMessage.objects.filter(
-#         patient=patient).order_by('created_at')
-
-#     # Check if Akash API is available
-#     akash_available = is_akash_available()
-
-#     context = {
-#         'messages': messages,
-#         'akash_available': akash_available
-#     }
-
-#     return render(request, 'core/patient/ai_chat.html', context)
-
-
-# def get_patient_context(patient):
-#     """Generate comprehensive context from patient data for AI, using the utils function"""
-#     # Use the comprehensive function from utils.py
-#     return get_patient_context(patient)
-
-
-# def is_akash_available():
-#     """Check if the Akash API is available."""
-#     try:
-#         import requests
-#         # Replace with actual health endpoint
-#         response = requests.get("https://chatapi.akash.network/api/v1/chat/completions", timeout=2)
-#         return response.status_code == 200
-#     except Exception:
-#         return False
 @patient_required
 def patient_ai_chat(request):
     """

@@ -6,44 +6,102 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-primary text-white text-center">
-                    <img src="{% static 'core/images/logo.svg' %}" alt="Swajarnika Logo" height="40" class="mb-2">
+                <div class="card-header text-center">
+                    <img src="{% static 'core/images/logo.svg' %}" alt="Swajarnika Logo" height="40" class="mb-3">
                     <h4 class="mb-0">Patient Registration</h4>
-
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="input-group">
+                                <span class="input-group-text bg-darker border-subtle">
+                                    <i class="fas fa-user text-primary"></i>
+                                </span>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                            <div class="input-group">
+                                <span class="input-group-text bg-darker border-subtle">
+                                    <i class="fas fa-phone text-primary"></i>
+                                </span>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="date_of_birth" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+                            <div class="input-group">
+                                <span class="input-group-text bg-darker border-subtle">
+                                    <i class="fas fa-calendar-alt text-primary"></i>
+                                </span>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth"
+                                    required>
+                            </div>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="gender" class="form-label">Gender</label>
-                            <select class="form-select" id="gender" name="gender" required>
-                                <option value="">Select Gender</option>
-                                <option value="M">Male</option>
-                                <option value="F">Female</option>
-                                <option value="O">Other</option>
-                            </select>
+                            <div class="input-group">
+                                <span class="input-group-text bg-darker border-subtle">
+                                    <i class="fas fa-venus-mars text-primary"></i>
+                                </span>
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                    <option value="O">Other</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="address" class="form-label">Address</label>
-                            <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                            <div class="input-group">
+                                <span class="input-group-text bg-darker border-subtle">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                </span>
+                                <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Register</button>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus"></i> Register
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Form validation
+    document.addEventListener('DOMContentLoaded', function () {
+        const forms = document.querySelectorAll('.needs-validation');
+
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                form.classList.add('was-validated');
+            }, false);
+        });
+
+        // Add animation to form fields
+        const formControls = document.querySelectorAll('.form-control, .form-select');
+        formControls.forEach((control, index) => {
+            control.style.opacity = '0';
+            control.style.transform = 'translateY(10px)';
+
+            setTimeout(() => {
+                control.style.transition = 'all 0.3s ease';
+                control.style.opacity = '1';
+                control.style.transform = 'translateY(0)';
+            }, 100 + (index * 50));
+        });
+    });
+</script>
 {% endblock %}

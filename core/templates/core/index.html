@@ -1,85 +1,393 @@
 {% extends "core/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Hero section styling */
+    .hero-section {
+        background-color: var(--bg-darker);
+        border-radius: 1rem;
+        padding: 4rem 2rem;
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+        z-index: 0;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .hero-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: fadeInUp 1s ease;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        max-width: 600px;
+        animation: fadeInUp 1s ease 0.2s both;
+    }
+    
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        animation: fadeInUp 1s ease 0.4s both;
+    }
+    
+    /* Feature cards */
+    .feature-card {
+        height: 100%;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all var(--transition-normal);
+        border: 1px solid var(--border-subtle);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+    
+    .feature-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: var(--primary);
+        transition: all var(--transition-normal);
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1);
+    }
+    
+    .feature-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+    
+    .feature-description {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+    
+    /* Sections */
+    .section {
+        padding: 4rem 0;
+        position: relative;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-align: center;
+        color: var(--text-primary);
+        position: relative;
+        padding-bottom: 1rem;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        border-radius: 3px;
+    }
+    
+    .section-subtitle {
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 3rem;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* CTA Section */
+    .cta-section {
+        background-color: var(--bg-darker);
+        border-radius: 1rem;
+        padding: 3rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+        z-index: 0;
+    }
+    
+    .cta-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.25rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.1rem;
+        }
+        
+        .hero-buttons {
+            flex-direction: column;
+        }
+        
+        .section {
+            padding: 3rem 0;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <!-- Hero Section -->
-    <section class="hero-section text-center py-5 bg-light">
-        <h1 class="display-4">Welcome to Swajarnika</h1>
-        <p class="lead">Revolutionizing healthcare through technology and integrity</p>
-    </section>
-
-    <!-- About Section -->
-    <section class="about-section py-5">
-        <div class="row">
-            <div class="col-md-6">
-                <h2>What is Swajarnika?</h2>
-                <p>Swajarnika is a comprehensive healthcare platform designed to bridge the gap between patients and healthcare providers. Our mission is to enhance medical integrity and improve patient outcomes through innovative technology solutions.</p>
-            </div>
-            <div class="col-md-6">
-                <img src="static/core/images/doctor-meeting-patient-office-young-female-smiling-medicine-healthcare-concept-150696989.png" alt="Healthcare illustration" class="img-fluid rounded">
-            </div>
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome to Swajarnika</h1>
+        <p class="hero-subtitle">Revolutionizing healthcare through technology and integrity. Experience a new standard of medical care with our innovative platform.</p>
+        <div class="hero-buttons">
+            <a href="{% url 'patient_login' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-user"></i> Patient Login
+            </a>
+            <a href="{% url 'patient_register' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-user-plus"></i> Register Now
+            </a>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Benefits Section -->
-    <section class="benefits-section py-5 bg-light">
-        <h2 class="text-center mb-5">How We Help Patients</h2>
-        <div class="row">
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Secure Medical Records</h5>
-                        <p class="card-text">Your health data is protected with advanced encryption and blockchain technology.</p>
-                    </div>
-                </div>
+<!-- About Section -->
+<section class="section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h2 class="mb-4" style="font-weight: 700; color: var(--text-primary);">What is Swajarnika?</h2>
+                <p class="mb-4" style="color: var(--text-secondary); font-size: 1.1rem;">Swajarnika is a comprehensive healthcare platform designed to bridge the gap between patients and healthcare providers. Our mission is to enhance medical integrity and improve patient outcomes through innovative technology solutions.</p>
+                <p style="color: var(--text-secondary);">We combine cutting-edge technology with a patient-centered approach to create a seamless healthcare experience that empowers both patients and medical professionals.</p>
             </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">24/7 Access</h5>
-                        <p class="card-text">Access your medical information anytime, anywhere through our secure portal.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">AI Assistance</h5>
-                        <p class="card-text">Get instant answers to your health questions through our AI-powered chatbot.</p>
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-lg overflow-hidden">
+                    <img src="{% static 'core/images/doctor-meeting-patient-office-young-female-smiling-medicine-healthcare-concept-150696989.png' %}" alt="Healthcare illustration" class="img-fluid">
+                    <div class="card-img-overlay d-flex align-items-end">
+                        <div style="background: rgba(15, 23, 42, 0.7); padding: 1rem; border-radius: 0.5rem; backdrop-filter: blur(4px);">
+                            <h5 class="text-white mb-0">Patient-centered care</h5>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Features Section -->
-    <section class="features-section py-5">
-        <h2 class="text-center mb-5">Our Key Features</h2>
+<!-- Features Section -->
+<section class="section bg-darker py-5" style="border-radius: 1rem; margin: 2rem 0;">
+    <div class="container py-4">
+        <h2 class="section-title">How We Help Patients</h2>
+        <p class="section-subtitle">Our platform offers a range of features designed to improve your healthcare experience</p>
+        
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
+                <div class="feature-card h-100 p-4 text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Secure Medical Records</h3>
+                    <p class="feature-description">Your health data is protected with advanced encryption and blockchain technology, ensuring privacy and security.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="feature-card h-100 p-4 text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="feature-title">24/7 Access</h3>
+                    <p class="feature-description">Access your medical information anytime, anywhere through our secure portal, giving you control over your health data.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="feature-card h-100 p-4 text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="feature-title">AI Assistance</h3>
+                    <p class="feature-description">Get instant answers to your health questions through our AI-powered chatbot, providing guidance when you need it.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Key Features Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Our Key Features</h2>
+        <p class="section-subtitle">Discover the tools and services that make Swajarnika the leading healthcare platform</p>
+        
         <div class="row">
-            <div class="col-md-6">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">Secure patient-doctor communication</li>
-                    <li class="list-group-item">Digital prescription management</li>
-                    <li class="list-group-item">Medical test result tracking</li>
-                </ul>
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3" style="color: var(--primary);">
+                            <i class="fas fa-comments me-2"></i> Patient-Doctor Communication
+                        </h5>
+                        <p class="mb-0" style="color: var(--text-secondary);">Secure messaging system that allows direct communication between patients and healthcare providers.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3" style="color: var(--primary);">
+                            <i class="fas fa-prescription me-2"></i> Digital Prescription Management
+                        </h5>
+                        <p class="mb-0" style="color: var(--text-secondary);">Access and manage your prescriptions digitally, with reminders for refills and dosage instructions.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3" style="color: var(--primary);">
+                            <i class="fas fa-vial me-2"></i> Medical Test Tracking
+                        </h5>
+                        <p class="mb-0" style="color: var(--text-secondary);">Monitor your test results over time with visual representations and expert interpretations.</p>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item">Medication reminders</li>
-                    <li class="list-group-item">Appointment scheduling</li>
-                    <li class="list-group-item">Health analytics dashboard</li>
-                </ul>
+            
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3" style="color: var(--primary);">
+                            <i class="fas fa-bell me-2"></i> Medication Reminders
+                        </h5>
+                        <p class="mb-0" style="color: var(--text-secondary);">Never miss a dose with our customizable medication reminder system that works with your schedule.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3" style="color: var(--primary);">
+                            <i class="fas fa-calendar-check me-2"></i> Appointment Scheduling
+                        </h5>
+                        <p class="mb-0" style="color: var(--text-secondary);">Book, reschedule, or cancel appointments with ease through our intuitive scheduling system.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3" style="color: var(--primary);">
+                            <i class="fas fa-chart-line me-2"></i> Health Analytics Dashboard
+                        </h5>
+                        <p class="mb-0" style="color: var(--text-secondary);">Visualize your health trends and progress with our comprehensive analytics dashboard.</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- CTA Section -->
-    <section class="cta-section py-5 bg-primary text-white text-center">
-        <h2>Ready to experience better healthcare?</h2>
-        <div class="mt-4">
-            <a href="{% url 'patient_login' %}" class="btn btn-light btn-lg mx-2">Login</a>
-            <a href="{% url 'patient_register' %}" class="btn btn-outline-light btn-lg mx-2">Register</a>
+<!-- CTA Section -->
+<section class="cta-section mt-5">
+    <div class="cta-content">
+        <h2 class="mb-4" style="color: var(--text-primary); font-weight: 700;">Ready to experience better healthcare?</h2>
+        <p class="mb-4" style="color: var(--text-secondary); max-width: 600px; margin: 0 auto;">Join thousands of patients who have transformed their healthcare experience with Swajarnika.</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'patient_login' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+            <a href="{% url 'patient_register' %}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-user-plus"></i> Register
+            </a>
         </div>
-    </section>
-</div>
+    </div>
+</section>
+
+<script>
+    // Animate elements on scroll
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate feature cards
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 300 + (index * 100));
+        });
+        
+        // Pulse animation for CTA buttons
+        const ctaButtons = document.querySelectorAll('.cta-section .btn');
+        ctaButtons.forEach(button => {
+            setInterval(() => {
+                button.style.animation = 'pulse 2s infinite';
+            }, 3000);
+        });
+    });
+</script>
 {% endblock %}

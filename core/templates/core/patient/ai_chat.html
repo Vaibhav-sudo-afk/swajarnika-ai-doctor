@@ -464,84 +464,84 @@
         const fileClear = document.getElementById('file-clear');
         const patientId = "{{ user.patient.id|default:'0' }}";
 
-    // Configure marked.js
-    marked.setOptions({
-        breaks: true,
-        gfm: true,
-        sanitize: false,  // Allow HTML to support more formatting
-        headerIds: false  // Disable header IDs to avoid conflicts
-    });
+        // Configure marked.js
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: false,  // Allow HTML to support more formatting
+            headerIds: false  // Disable header IDs to avoid conflicts
+        });
 
-    // Scroll to bottom
-    messagesArea.scrollTop = messagesArea.scrollHeight;
+        // Scroll to bottom
+        messagesArea.scrollTop = messagesArea.scrollHeight;
 
-    // File input change handler
-    fileInput.addEventListener('change', function () {
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            fileName.textContent = file.name;
-            fileUploadArea.style.display = 'flex';
+        // File input change handler
+        fileInput.addEventListener('change', function () {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileName.textContent = file.name;
+                fileUploadArea.style.display = 'flex';
 
-            // Validate file type and size
-            const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-            const maxSize = 10 * 1024 * 1024; // 10MB
+                // Validate file type and size
+                const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+                const maxSize = 10 * 1024 * 1024; // 10MB
 
-            if (!validTypes.includes(file.type)) {
-                alert('Please upload a PDF or image file.');
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload a PDF or image file.');
+                    clearFileInput();
+                    return;
+                }
+
+                if (file.size > maxSize) {
+                    alert('File size must be less than 10MB.');
+                    clearFileInput();
+                    return;
+                }
+            } else {
                 clearFileInput();
-                return;
             }
+        });
 
-            if (file.size > maxSize) {
-                alert('File size must be less than 10MB.');
-                clearFileInput();
-                return;
-            }
-        } else {
-            clearFileInput();
-        }
-    });
+        // Clear file input
+        fileClear.addEventListener('click', clearFileInput);
 
-    // Clear file input
-    fileClear.addEventListener('click', clearFileInput);
-
-    function clearFileInput() {
-        fileInput.value = '';
-        fileUploadArea.style.display = 'none';
-        fileName.textContent = '';
-    }
-
-    // Form submission handler
-    chatForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        const message = messageInput.value.trim();
-        if (!message && !fileInput.files.length) return;
-
-        // Clear input and disable
-        messageInput.value = '';
-        messageInput.disabled = true;
-        sendButton.disabled = true;
-
-        // Add user message
-        const now = new Date();
-        const timeString = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-        const userMessageRow = document.createElement('div');
-        userMessageRow.className = 'message-row user-message';
-
-        let messageContent = '';
-
-        // If there's a file, mention it in the message
-        if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            messageContent += `<p>${message || 'I\'m sending you a file.'}</p>`;
-            messageContent += `<p><i class="fas fa-file"></i> ${file.name}</p>`;
-        } else {
-            messageContent = message.replace(/\n/g, '<br>');
+        function clearFileInput() {
+            fileInput.value = '';
+            fileUploadArea.style.display = 'none';
+            fileName.textContent = '';
         }
 
-        userMessageRow.innerHTML = `
+        // Form submission handler
+        chatForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const message = messageInput.value.trim();
+            if (!message && !fileInput.files.length) return;
+
+            // Clear input and disable
+            messageInput.value = '';
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            // Add user message
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+            const userMessageRow = document.createElement('div');
+            userMessageRow.className = 'message-row user-message';
+
+            let messageContent = '';
+
+            // If there's a file, mention it in the message
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                messageContent += `<p>${message || 'I\'m sending you a file.'}</p>`;
+                messageContent += `<p><i class="fas fa-file"></i> ${file.name}</p>`;
+            } else {
+                messageContent = message.replace(/\n/g, '<br>');
+            }
+
+            userMessageRow.innerHTML = `
                 <div class="message-bubble user-bubble">
                     <div class="message-content">${messageContent}</div>
                     <div class="message-footer">
@@ -549,107 +549,153 @@
                     </div>
                 </div>
             `;
-        messagesArea.appendChild(userMessageRow);
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+            messagesArea.appendChild(userMessageRow);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
 
-        typingIndicator.style.display = 'inline-flex';
-        messagesArea.appendChild(typingIndicator);
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+            typingIndicator.style.display = 'inline-flex';
+            messagesArea.appendChild(typingIndicator);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
 
-        // Create FormData for the request
-        const formData = new FormData();
-        formData.append('message', message);
-        formData.append('patient_id', patientId);
+            // Create FormData for the request
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('patient_id', patientId);
 
-        // Add file if present
-        if (fileInput.files.length > 0) {
-            formData.append('file', fileInput.files[0]);
-        }
+            // Add file if present
+            if (fileInput.files.length > 0) {
+                formData.append('file', fileInput.files[0]);
+            }
 
-        // Call Akash Chat API
-        fetch('/api/chat/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: formData
-        })
-            .then(function (response) {
-                return response.json();
+            // Call Akash Chat API
+            fetch('/api/chat/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
             })
-            .then(function (data) {
-                // Hide typing indicator
-                typingIndicator.style.display = 'none';
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
 
-                // Clear file input
-                clearFileInput();
+                    // Clear file input
+                    clearFileInput();
 
-                if (data.message) {
-                    // Add AI response
-                    const aiMessageRow = document.createElement('div');
-                    aiMessageRow.className = 'message-row ai-message';
-                    aiMessageRow.innerHTML = `
-                        <div class="message-bubble ai-bubble">
-                            <div class="message-content">${marked.parse(data.message)}</div>
-                            <div class="message-footer">
-                                <div class="message-time">${timeString}</div>
+                    if (data.message) {
+                        // Add AI response
+                        const aiMessageRow = document.createElement('div');
+                        aiMessageRow.className = 'message-row ai-message';
+                        aiMessageRow.innerHTML = `
+                            <div class="message-bubble ai-bubble">
+                                <div class="message-content">${marked.parse(data.message)}</div>
+                                <div class="message-footer">
+                                    <div class="message-time">${timeString}</div>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                    messagesArea.appendChild(aiMessageRow);
-                } else {
-                    // Show error
+                        `;
+                        messagesArea.appendChild(aiMessageRow);
+                    } else {
+                        // Show error
+                        const errorRow = document.createElement('div');
+                        errorRow.className = 'message-row ai-message';
+                        errorRow.innerHTML = `
+                            <div class="message-bubble ai-bubble">
+                                <div class="message-content">Error: ${data.error || 'Unknown error occurred'}</div>
+                                <div class="message-footer">
+                                    <div class="message-time">${timeString}</div>
+                                </div>
+                            </div>
+                        `;
+                        messagesArea.appendChild(errorRow);
+                    }
+
+                    // Scroll to bottom
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                    typingIndicator.style.display = 'none';
+
                     const errorRow = document.createElement('div');
                     errorRow.className = 'message-row ai-message';
                     errorRow.innerHTML = `
                         <div class="message-bubble ai-bubble">
-                            <div class="message-content">Error: ${data.error || 'Unknown error occurred'}</div>
+                            <div class="message-content">Network error. Please try again.</div>
                             <div class="message-footer">
                                 <div class="message-time">${timeString}</div>
                             </div>
                         </div>
                     `;
                     messagesArea.appendChild(errorRow);
-                }
 
+                    // Clear file input
+                    clearFileInput();
+                })
+                .finally(function () {
+                    // Re-enable input
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                });
+        });
+
+        // Handle Enter key
+        messageInput.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Load chat history
+        function loadChatHistory() {
+            fetch('/api/chat/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messagesArea = document.getElementById('chat-messages');
+                
+                // Clear existing messages
+                messagesArea.innerHTML = '';
+                
+                // Add each message
+                data.messages.forEach(msg => {
+                    const messageRow = document.createElement('div');
+                    messageRow.className = `message-row ${msg.is_ai ? 'ai-message' : 'user-message'}`;
+                    
+                    const time = new Date(msg.timestamp).toLocaleTimeString([], { 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
+                    });
+                    
+                    messageRow.innerHTML = `
+                        <div class="message-bubble ${msg.is_ai ? 'ai-bubble' : 'user-bubble'}">
+                            <div class="message-content">${msg.is_ai ? marked.parse(msg.message) : msg.message}</div>
+                            <div class="message-footer">
+                                <div class="message-time">${time}</div>
+                            </div>
+                        </div>
+                    `;
+                    messagesArea.appendChild(messageRow);
+                });
+                
                 // Scroll to bottom
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             })
-            .catch(function (error) {
-                console.error('Error:', error);
-                typingIndicator.style.display = 'none';
-
-                const errorRow = document.createElement('div');
-                errorRow.className = 'message-row ai-message';
-                errorRow.innerHTML = `
-                    <div class="message-bubble ai-bubble">
-                        <div class="message-content">Network error. Please try again.</div>
-                        <div class="message-footer">
-                            <div class="message-time">${timeString}</div>
-                        </div>
-                    </div>
-                `;
-                messagesArea.appendChild(errorRow);
-
-                // Clear file input
-                clearFileInput();
-            })
-            .finally(function () {
-                // Re-enable input
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
-                messagesArea.scrollTop = messagesArea.scrollHeight;
+            .catch(error => {
+                console.error('Error loading chat history:', error);
             });
-    });
-
-    // Handle Enter key
-    messageInput.addEventListener('keypress', function (event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            chatForm.dispatchEvent(new Event('submit'));
         }
+
+        loadChatHistory();
     });
-});
 </script>
 {% endblock extra_js %}
