@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from django.contrib.messages import constants as messages
 from pathlib import Path
 import os
 
@@ -28,6 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'swajarnika.onrender.com',
+    '127.0.0.1',
 ]
 
 
@@ -137,7 +139,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Add message tags for Bootstrap
-from django.contrib.messages import constants as messages
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert-info',
     messages.INFO: 'alert-info',
@@ -147,4 +148,5 @@ MESSAGE_TAGS = {
 }
 
 LOGIN_URL = 'doctor_login'  # Default login URL
-LOGIN_REDIRECT_URL = 'doctor_dashboard'  # Where to redirect after successful login
+# Where to redirect after successful login
+LOGIN_REDIRECT_URL = 'doctor_dashboard'

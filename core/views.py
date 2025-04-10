@@ -5,14 +5,14 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import openai
 from django.contrib.auth import authenticate, login, logout
 from .serializers import DoctorRegisterSerializer, PatientRegisterSerializer, VisitSerializer, FileUploadSerializer
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 import os
 from django.conf import settings
 from .models import AIChatMessage, FileUpload, Visit, Patient, Doctor, AIPrompt
-from .utils import format_chat_messages, get_detailed_patient_data
+from .utils import format_chat_messages, get_detailed_patient_data, get_file_contents
 import tempfile
 import uuid
 from rest_framework.permissions import IsAuthenticated
@@ -22,6 +22,8 @@ import string
 import requests
 from django.utils import timezone
 import traceback
+from langdetect import detect
+from asgiref.sync import async_to_sync
 
 User = get_user_model()
 
@@ -172,35 +174,14 @@ class PatientProfileView(APIView):
 
 
 class ChatAPIView(APIView):
-    def get(self, request):
-        """Get chat history for the patient"""
-        try:
-            patient = request.user.patient
-            messages = AIChatMessage.objects.filter(patient=patient).order_by('created_at')
-            
-            return Response({
-                'messages': [
-                    {
-                        'message': msg.message,
-                        'is_ai': msg.is_ai,
-                        'timestamp': msg.created_at.strftime('%Y-%m-%d %H:%M:%S')
-                    } for msg in messages
-                ]
-            })
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     def post(self, request):
         message = request.data.get('message')
         uploaded_file = request.FILES.get('file')
-
-        if not message and not uploaded_file:
-            return Response({'error': 'Message or file is required'}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         try:
             patient = request.user.patient
-
-            # Save user message first
+            
+            # Save user message
             user_message = AIChatMessage.objects.create(
                 patient=patient,
                 message=message,
@@ -208,27 +189,22 @@ class ChatAPIView(APIView):
             )
 
             # Handle file if present
+            file_content = None
             if uploaded_file:
-                visit = Visit.objects.filter(patient=patient).order_by('-date_of_visit').first()
-                if not visit:
-                    visit = Visit.objects.create(
-                        patient=patient,
-                        doctor=patient.doctor,
-                        date_of_visit=timezone.now().date(),
-                        diagnosis="Chat Upload",
-                        treatment_plan="Document Review"
-                    )
+                file_content = self.process_uploaded_file(uploaded_file, patient)
 
-                file_upload = FileUpload.objects.create(
-                    visit=visit,
-                    file_path=uploaded_file,
-                    description=f"Uploaded during chat: {uploaded_file.name}"
-                )
+            # Get historical context
+            historical_context = self.get_historical_context(patient)
 
-            # Format messages with context
-            messages = format_chat_messages(patient, message)
+            # Format messages
+            messages = format_chat_messages(
+                patient=patient,
+                user_message=message,
+                file_content=file_content,
+                historical_context=historical_context
+            )
 
-            # Make API request
+            # Make direct API call without streaming
             response = requests.post(
                 "https://chatapi.akash.network/api/v1/chat/completions",
                 json={
@@ -240,8 +216,7 @@ class ChatAPIView(APIView):
                 headers={
                     "Authorization": "Bearer sk-lRtbEbMz_nah_M3s-64K1g",
                     "Content-Type": "application/json"
-                },
-                timeout=20
+                }
             )
 
             if response.status_code == 200:
@@ -257,7 +232,7 @@ class ChatAPIView(APIView):
                 # Save prompt for tracking
                 AIPrompt.objects.create(
                     patient=patient,
-                    visit=visit if uploaded_file else None,
+                    visit=Visit.objects.filter(patient=patient).last(),
                     prompt_text=message,
                     response_text=ai_reply,
                     context_used=get_detailed_patient_data(patient)[:500]
@@ -265,18 +240,52 @@ class ChatAPIView(APIView):
 
                 return Response({
                     'message': ai_reply,
-                    'context_used': True,
-                    'file_processed': bool(uploaded_file),
-                    'message_id': ai_message.id
+                    'file_processed': bool(uploaded_file)
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'error': f"API Error: {response.status_code}",
-                    'details': response.text
+                    'error': f"API Error: {response.status_code}"
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def process_uploaded_file(self, file, patient):
+        visit = Visit.objects.filter(patient=patient).order_by('-date_of_visit').first()
+        if not visit:
+            visit = Visit.objects.create(
+                patient=patient,
+                doctor=patient.doctor,
+                date_of_visit=timezone.now().date(),
+                diagnosis="File Upload via Chat",
+                treatment_plan="Document Review"
+            )
+
+        file_upload = FileUpload.objects.create(
+            visit=visit,
+            file_path=file,
+            description=f"Uploaded during chat: {file.name}"
+        )
+
+        # Extract text from file
+        return get_file_contents([file_upload])
+
+    def get_historical_context(self, patient):
+        # Get previous interactions
+        previous_prompts = AIPrompt.objects.filter(
+            patient=patient
+        ).order_by('-created_at')[:5]
+
+        return {
+            'previous_interactions': [
+                {
+                    'prompt': p.prompt_text,
+                    'response': p.response_text,
+                    'required_info': p.required_info,
+                    'language': p.language_detected
+                } for p in previous_prompts
+            ]
+        }
 
 
 class LogoutView(APIView):

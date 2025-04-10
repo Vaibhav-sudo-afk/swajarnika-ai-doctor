@@ -26,14 +26,14 @@ class Doctor(models.Model):
 
 class Patient(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='patients')
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='patients', null=True, blank=True)
     name = models.CharField(max_length=255)
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=20)
     phone = models.CharField(max_length=15, unique=True)
     address = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    password = models.CharField(max_length=100, blank=True, null=True)
+    password = models.CharField(default='',max_length=100)
     
     def __str__(self):
         return self.name
@@ -83,12 +83,22 @@ class FileUpload(models.Model):
         return f"File for {self.visit}"
 
 class AIPrompt(models.Model):
+    REQUIRED_INFO_STATUSES = [
+        ('complete', 'Complete Information'),
+        ('pending', 'Information Required'),
+        ('updated', 'Information Updated')
+    ]
+    
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     visit = models.ForeignKey(Visit, on_delete=models.CASCADE, null=True, blank=True)
-    prompt_text = models.TextField(default='')  # Added default
-    response_text = models.TextField(default='')  # Added default
+    prompt_text = models.TextField(default='')
+    response_text = models.TextField(default='')
     context_used = models.TextField(null=True, blank=True)
+    language_detected = models.CharField(max_length=50, blank=True, null=True)
+    required_info = models.JSONField(default=dict, blank=True)
+    info_status = models.CharField(max_length=20, choices=REQUIRED_INFO_STATUSES, default='complete')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"AI Prompt for {self.patient.name} at {self.created_at}"

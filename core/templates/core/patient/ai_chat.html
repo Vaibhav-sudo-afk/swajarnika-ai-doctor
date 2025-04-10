@@ -527,12 +527,11 @@
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
+            // Show user message
             const userMessageRow = document.createElement('div');
             userMessageRow.className = 'message-row user-message';
-
+            
             let messageContent = '';
-
-            // If there's a file, mention it in the message
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 messageContent += `<p>${message || 'I\'m sending you a file.'}</p>`;
@@ -552,21 +551,19 @@
             messagesArea.appendChild(userMessageRow);
             messagesArea.scrollTop = messagesArea.scrollHeight;
 
+            // Show typing indicator
             typingIndicator.style.display = 'inline-flex';
             messagesArea.appendChild(typingIndicator);
             messagesArea.scrollTop = messagesArea.scrollHeight;
 
-            // Create FormData for the request
+            // Create FormData
             const formData = new FormData();
             formData.append('message', message);
-            formData.append('patient_id', patientId);
-
-            // Add file if present
             if (fileInput.files.length > 0) {
                 formData.append('file', fileInput.files[0]);
             }
 
-            // Call Akash Chat API
+            // Make API call
             fetch('/api/chat/', {
                 method: 'POST',
                 headers: {
@@ -574,73 +571,66 @@
                 },
                 body: formData
             })
-                .then(function (response) {
-                    return response.json();
-                })
-                .then(function (data) {
-                    // Hide typing indicator
-                    typingIndicator.style.display = 'none';
+            .then(response => response.json())
+            .then(data => {
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
 
-                    // Clear file input
-                    clearFileInput();
-
-                    if (data.message) {
-                        // Add AI response
-                        const aiMessageRow = document.createElement('div');
-                        aiMessageRow.className = 'message-row ai-message';
-                        aiMessageRow.innerHTML = `
-                            <div class="message-bubble ai-bubble">
-                                <div class="message-content">${marked.parse(data.message)}</div>
-                                <div class="message-footer">
-                                    <div class="message-time">${timeString}</div>
-                                </div>
+                // Show AI response
+                if (data.message) {
+                    const aiMessageRow = document.createElement('div');
+                    aiMessageRow.className = 'message-row ai-message';
+                    aiMessageRow.innerHTML = `
+                        <div class="message-bubble ai-bubble">
+                            <div class="message-content">${marked.parse(data.message)}</div>
+                            <div class="message-footer">
+                                <div class="message-time">${timeString}</div>
                             </div>
-                        `;
-                        messagesArea.appendChild(aiMessageRow);
-                    } else {
-                        // Show error
-                        const errorRow = document.createElement('div');
-                        errorRow.className = 'message-row ai-message';
-                        errorRow.innerHTML = `
-                            <div class="message-bubble ai-bubble">
-                                <div class="message-content">Error: ${data.error || 'Unknown error occurred'}</div>
-                                <div class="message-footer">
-                                    <div class="message-time">${timeString}</div>
-                                </div>
-                            </div>
-                        `;
-                        messagesArea.appendChild(errorRow);
-                    }
-
-                    // Scroll to bottom
-                    messagesArea.scrollTop = messagesArea.scrollHeight;
-                })
-                .catch(function (error) {
-                    console.error('Error:', error);
-                    typingIndicator.style.display = 'none';
-
+                        </div>
+                    `;
+                    messagesArea.appendChild(aiMessageRow);
+                } else {
+                    // Show error message
                     const errorRow = document.createElement('div');
                     errorRow.className = 'message-row ai-message';
                     errorRow.innerHTML = `
                         <div class="message-bubble ai-bubble">
-                            <div class="message-content">Network error. Please try again.</div>
+                            <div class="message-content">Error: ${data.error || 'Unknown error occurred'}</div>
                             <div class="message-footer">
                                 <div class="message-time">${timeString}</div>
                             </div>
                         </div>
                     `;
                     messagesArea.appendChild(errorRow);
+                }
 
-                    // Clear file input
-                    clearFileInput();
-                })
-                .finally(function () {
-                    // Re-enable input
-                    messageInput.disabled = false;
-                    sendButton.disabled = false;
-                    messageInput.focus();
-                    messagesArea.scrollTop = messagesArea.scrollHeight;
-                });
+                // Clear file input
+                clearFileInput();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                typingIndicator.style.display = 'none';
+                
+                // Show error message
+                const errorRow = document.createElement('div');
+                errorRow.className = 'message-row ai-message';
+                errorRow.innerHTML = `
+                    <div class="message-bubble ai-bubble">
+                        <div class="message-content">Network error. Please try again.</div>
+                        <div class="message-footer">
+                            <div class="message-time">${timeString}</div>
+                        </div>
+                    </div>
+                `;
+                messagesArea.appendChild(errorRow);
+            })
+            .finally(() => {
+                // Re-enable input
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            });
         });
 
         // Handle Enter key
@@ -696,6 +686,88 @@
         }
 
         loadChatHistory();
+
+        // Add this to your existing JavaScript
+        function handleStream(response) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            return new Promise((resolve, reject) => {
+                function pushData() {
+                    reader.read().then(({done, value}) => {
+                        if (done) {
+                            if (buffer) {
+                                try {
+                                    const data = JSON.parse(buffer);
+                                    handleStreamMessage(data);
+                                } catch (e) {
+                                    console.error('Error parsing JSON:', e);
+                                }
+                            }
+                            resolve();
+                            return;
+                        }
+
+                        buffer += decoder.decode(value, {stream: true});
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    handleStreamMessage(data);
+                                } catch (e) {
+                                    console.error('Error parsing JSON:', e);
+                                }
+                            }
+                        }
+
+                        pushData();
+                    });
+                }
+
+                pushData();
+            });
+        }
+
+        function handleStreamMessage(data) {
+            if (data.required_info) {
+                // Handle required information request
+                showRequiredInfoPrompt(data.required_info);
+            } else if (data.text) {
+                // Update the current message with new text
+                updateStreamingMessage(data.text);
+            }
+        }
+
+        let currentMessageElement = null;
+
+        function updateStreamingMessage(text) {
+            if (!currentMessageElement) {
+                currentMessageElement = createNewMessageElement();
+                messagesArea.appendChild(currentMessageElement);
+            }
+
+            const contentElement = currentMessageElement.querySelector('.message-content');
+            contentElement.innerHTML = marked.parse(text);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function createNewMessageElement() {
+            const messageRow = document.createElement('div');
+            messageRow.className = 'message-row ai-message';
+            messageRow.innerHTML = `
+                <div class="message-bubble ai-bubble">
+                    <div class="message-content"></div>
+                    <div class="message-footer">
+                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `;
+            return messageRow;
+        }
     });
 </script>
 {% endblock extra_js %}

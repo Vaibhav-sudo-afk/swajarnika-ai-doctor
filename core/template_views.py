@@ -19,7 +19,8 @@ from django.utils import timezone
 import traceback
 from typing import List, Dict
 import json
-
+from . import models
+from django.contrib import messages
 # First define the decorators
 
 
@@ -105,10 +106,16 @@ def doctor_dashboard(request):
 class PatientRegistrationForm(forms.Form):
     name = forms.CharField(max_length=255)
     phone = forms.CharField(max_length=15)
-    date_of_birth = forms.DateField()
-    gender = forms.ChoiceField(
-        choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    password = forms.CharField(widget=forms.PasswordInput)
+    confirm_password = forms.CharField(widget=forms.PasswordInput)
+    date_of_birth = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    gender = forms.ChoiceField(choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     address = forms.CharField(widget=forms.Textarea)
+    doctor = forms.ModelChoiceField(
+        queryset=Doctor.objects.all(),
+        required=True,
+        empty_label="Select a Doctor"
+    )
 
 
 def patient_register(request):
@@ -120,32 +127,53 @@ def patient_register(request):
         if form.is_valid():
             User = get_user_model()
             phone = form.cleaned_data['phone']
-            password = generate_password()
+            password = form.cleaned_data['password']
 
-            if User.objects.filter(username=phone).exists():
+            if password != form.cleaned_data['confirm_password']:
+                messages.error(request, "Passwords don't match!")
                 return render(request, 'core/patient/register.html', {'form': form})
 
-            user = User.objects.create_user(
-                username=phone,
-                password=password,
-                is_patient=True
-            )
+            if User.objects.filter(username=phone).exists():
+                messages.error(request, "A user with this phone number already exists!")
+                return render(request, 'core/patient/register.html', {'form': form})
 
-            Patient.objects.create(
-                user=user,
-                name=form.cleaned_data['name'],
-                phone=phone,
-                date_of_birth=form.cleaned_data['date_of_birth'],
-                gender=form.cleaned_data['gender'],
-                address=form.cleaned_data['address'],
-                password=password
-            )
+            try:
+                # Create user
+                user = User.objects.create_user(
+                    username=phone,
+                    password=password,
+                    is_patient=True
+                )
 
-            return redirect('patient_login')
+                # Create patient
+                Patient.objects.create(
+                    user=user,
+                    doctor=form.cleaned_data['doctor'],
+                    name=form.cleaned_data['name'],
+                    phone=phone,
+                    date_of_birth=form.cleaned_data['date_of_birth'],
+                    gender=form.cleaned_data['gender'],
+                    address=form.cleaned_data['address'],
+                    password=password
+                )
+
+                messages.success(request, 'Registration successful! Please login.')
+                return redirect('patient_login')
+
+            except Exception as e:
+                messages.error(request, f"Registration failed: {str(e)}")
+                user.delete() if 'user' in locals() else None
+                return render(request, 'core/patient/register.html', {'form': form})
     else:
         form = PatientRegistrationForm()
 
-    return render(request, 'core/patient/register.html', {'form': form})
+    # Get all doctors for the selection
+    doctors = Doctor.objects.all().order_by('name')
+    
+    return render(request, 'core/patient/register.html', {
+        'form': form,
+        'doctors': doctors
+    })
 
 
 def patient_login(request):
@@ -323,44 +351,40 @@ def generate_password(length=8):
 @doctor_required
 def doctor_patient_add(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        date_of_birth = request.POST.get('date_of_birth')
-        gender = request.POST.get('gender')
-        phone = request.POST.get('phone')
-        address = request.POST.get('address')
-        doctor = request.user.doctor
-        password = generate_password()
-
         try:
             User = get_user_model()
-            # Check if user already exists
-            if User.objects.filter(username=phone).exists():
-                return render(request, 'core/doctor/dashboard.html')
+            phone = request.POST.get('phone')
+            password = generate_password()  # Or get from form if you want doctor to set it
 
-            # Create user with is_patient flag
+            if User.objects.filter(username=phone).exists():
+                messages.error(request, 'A patient with this phone number already exists.')
+                return redirect('doctor_patient_add')
+
+            # Create user
             user = User.objects.create_user(
                 username=phone,
                 password=password,
                 is_patient=True
             )
 
-            # Create patient profile
+            # Create patient
             patient = Patient.objects.create(
                 user=user,
-                doctor=doctor,
-                name=name,
-                date_of_birth=datetime.strptime(
-                    date_of_birth, '%Y-%m-%d').date(),
-                gender=gender,
+                doctor=request.user.doctor,
+                name=request.POST.get('name'),
+                date_of_birth=request.POST.get('date_of_birth'),
+                gender=request.POST.get('gender'),
                 phone=phone,
-                address=address,
-                password=password  # Store the plain password temporarily for display
+                address=request.POST.get('address'),
+                password=password
             )
 
-            return redirect('doctor_dashboard')
+            messages.success(request, f'Patient added successfully! Their password is: {password}')
+            return redirect('doctor_patient_detail', patient_id=patient.id)
 
         except Exception as e:
-            return render(request, 'core/doctor/patient_add.html')
+            messages.error(request, f'Error adding patient: {str(e)}')
+            return redirect('doctor_patient_add')
 
     return render(request, 'core/doctor/patient_add.html')
 
