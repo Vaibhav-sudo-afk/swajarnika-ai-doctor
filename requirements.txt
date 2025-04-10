@@ -46,3 +46,7 @@ openai==0.28.0
 
 # Frontend Integration
 django-tailwind==3.8.0
+
+
+
+gunicorn==21.2.0
