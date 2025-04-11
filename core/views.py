@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 import json
 import os
 from django.conf import settings
-from .models import AIChatMessage, FileUpload, Visit, Patient, Doctor, AIPrompt
+from .models import AIChatMessage, FileUpload, Visit, Patient, Doctor, AIPrompt, Medication
 from .utils import format_chat_messages, get_detailed_patient_data, get_file_contents
 import tempfile
 import uuid
@@ -24,6 +24,9 @@ from django.utils import timezone
 import traceback
 from langdetect import detect
 from asgiref.sync import async_to_sync
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from .decorators import doctor_required, patient_required
 
 User = get_user_model()
 
@@ -292,3 +295,15 @@ class LogoutView(APIView):
     def post(self, request):
         logout(request)
         return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
+
+
+@doctor_required
+def doctor_visit_delete(request, visit_id):
+    try:
+        visit = get_object_or_404(Visit, id=visit_id, doctor=request.user.doctor)
+        visit.delete()
+        messages.success(request, 'Visit deleted successfully.')
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        messages.error(request, f'Error deleting visit: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=400)

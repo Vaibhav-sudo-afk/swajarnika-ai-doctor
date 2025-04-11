@@ -51,11 +51,12 @@ urlpatterns = [
          template_views.doctor_file_upload, name='doctor_file_upload'),
     path('doctor/file/<int:file_id>/delete/',
          template_views.doctor_file_delete, name='doctor_file_delete'),
-    # Add this line in urlpatterns
     path('doctor/visit/<int:visit_id>/update/',
          template_views.doctor_visit_update, name='doctor_visit_update'),
     path('doctor/visit/<int:visit_id>/',
          template_views.doctor_visit_detail, name='doctor_visit_detail'),
+    path('doctor/visit/<int:visit_id>/file/upload/',
+         template_views.doctor_file_upload, name='doctor_file_upload'),
     # Patient URLs
     path('patient/register/', template_views.patient_register,
          name='patient_register'),

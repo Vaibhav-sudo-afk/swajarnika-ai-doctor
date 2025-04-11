@@ -8,7 +8,7 @@
             <div class="card">
                 <div class="card-header text-center">
                     <img src="{% static 'core/images/logo.svg' %}" alt="Swajarnika Logo" height="40" class="mb-3">
-                    <h4 class="mb-0">Patient Registration</h4>
+                    <h4 class="mb-0" style="color: aliceblue;">Patient Registration</h4>
                 </div>
                 <div class="card-body">
                     {% if messages %}
@@ -106,13 +106,32 @@
                     </form>
 
                     <div class="mt-3 text-center">
-                        <p>Already have an account? <a href="{% url 'patient_login' %}">Login here</a></p>
+                        <p style="color: aliceblue;">Already have an account? <a href="{% url 'patient_login' %}">Login here</a></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .doctor-search {
+        color: var(--text-primary) !important;
+        background-color: var(--bg-input) !important;
+        border: 1px solid var(--border-subtle);
+    }
+
+    .doctor-search::placeholder {
+        color: var(--text-secondary);
+    }
+
+    .doctor-search:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -122,8 +141,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const doctorSelect = document.getElementById('doctor');
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
-    searchInput.className = 'form-control mb-2';
-    searchInput.placeholder = 'Search doctors by name or specialization...';
+    searchInput.className = 'form-control mb-2 doctor-search';  // Add custom class
+    searchInput.setAttribute('style', 'color: var(--text-primary) !important; background-color: var(--bg-input);');
+    searchInput.placeholder = 'Search doctors by name/specialization...';
     doctorSelect.parentNode.insertBefore(searchInput, doctorSelect);
 
     const originalOptions = Array.from(doctorSelect.options);

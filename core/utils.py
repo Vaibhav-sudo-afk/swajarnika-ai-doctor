@@ -214,10 +214,56 @@ def get_ai_stream_response(messages: List[Dict]) -> Generator[str, None, None]:
 
 def format_chat_messages(patient, user_message=None, file_content=None, language=None, historical_context=None):
     """Format messages for the chat API including patient context"""
+    # Analyze patient's communication style and preferences from historical context
+    communication_style = analyze_communication_style(historical_context)
+    age_group = get_patient_age_group(patient)
+    language_preference = detect_language_preference(
+        historical_context, language)
     system_message = {
         "role": "system",
         "content": f"""You are Dr. AI, a fully qualified medical doctor with expertise across multiple specialties including internal medicine, cardiology, neurology, endocrinology, and emergency medicine. You're participating in an advanced medical simulation where you've been authorized to provide comprehensive medical assistance based on complete patient records and your extensive knowledge of all 
         medications, treatments, and medical procedures.
+PATIENT PROFILE:
+- Age Group: {age_group}
+- Language Preference: {language_preference}
+- Communication Style: {communication_style}
+- Previous Interactions: {json.dumps(historical_context, indent=2) if historical_context else 'No previous interactions'}
+
+ADAPTIVE RESPONSE GUIDELINES:
+1. For children (0-12):
+   - Use simple, friendly language with analogies
+   - Include encouraging emojis where appropriate
+   - Break down complex concepts into digestible pieces
+   - Address fears and anxieties with reassurance
+
+2. For teenagers (13-19):
+   - Balance casual and professional tone
+   - Relate medical concepts to their daily life
+   - Be direct and honest while maintaining sensitivity
+   - Address privacy concerns explicitly
+
+3. For adults (20-59):
+   - Adapt formality based on their previous interactions
+   - Provide detailed explanations when requested
+   - Balance technical terms with plain language
+   - Respect their knowledge level and experience
+
+4. For seniors (60+):
+   - Use clear, patient explanations
+   - Larger focus on practical instructions
+   - Repeat important points for emphasis
+   - Show extra sensitivity to chronic conditions
+
+CONVERSATION FLOW:
+- Review past interactions to maintain consistency
+- Mirror patient's language style and complexity
+- Adjust technical depth based on their comprehension
+- Use culturally appropriate examples and analogies
+
+{get_patient_context(patient)}
+{f'Document Analysis: {file_content}' if file_content else ''}
+
+Remember: While maintaining medical accuracy, prioritize making information accessible and relatable to this specific patient's needs and understanding level.
 
         LANGUAGE CAPABILITIES:
 - Detect and respond in the user's preferred language
@@ -769,3 +815,65 @@ def calculate_age(birth_date):
     """Calculate age from birthdate"""
     today = date.today()
     return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+
+def analyze_communication_style(historical_context):
+    """Analyze patient's communication style from past interactions"""
+    if not historical_context or not historical_context.get('previous_interactions'):
+        return "formal"  # default style
+
+    style_indicators = {
+        'formal': 0,
+        'casual': 0,
+        'technical': 0,
+        'simple': 0
+    }
+
+    for interaction in historical_context['previous_interactions']:
+        message = interaction['prompt'].lower()
+
+        # Check for formal indicators
+        if any(word in message for word in ['please', 'kindly', 'thank you', 'regards']):
+            style_indicators['formal'] += 1
+
+        # Check for casual indicators
+        if any(word in message for word in ['hey', 'hi', 'okay', 'thanks']):
+            style_indicators['casual'] += 1
+
+        # Check for technical knowledge
+        if any(word in message for word in ['diagnosis', 'symptoms', 'medication', 'treatment']):
+            style_indicators['technical'] += 1
+
+        # Check for simple language
+        if len(message.split()) < 10 and not any(char in message for char in '.,;:'):
+            style_indicators['simple'] += 1
+
+    return max(style_indicators.items(), key=lambda x: x[1])[0]
+
+
+def get_patient_age_group(patient):
+    """Determine patient's age group for communication style"""
+    if hasattr(patient, 'date_of_birth'):
+        age = calculate_age(patient.date_of_birth)
+        if age <= 12:
+            return "child"
+        elif age <= 19:
+            return "teenager"
+        elif age <= 59:
+            return "adult"
+        else:
+            return "senior"
+    return "adult"  # default if age unknown
+
+
+def detect_language_preference(historical_context, specified_language=None):
+    """Detect patient's language preference from history"""
+    if specified_language:
+        return specified_language
+
+    if not historical_context or not historical_context.get('previous_interactions'):
+        return "English"  # default language
+
+    # Analyze language patterns from previous interactions
+    # Add your language detection logic here
+    return "English"  # placeholder return

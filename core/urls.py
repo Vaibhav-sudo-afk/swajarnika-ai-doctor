@@ -21,6 +21,7 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('patient/ai-chat/', ChatAPIView.as_view(), name='patient_ai_chat'),
     path('chat/', ChatAPIView.as_view(), name='chat-api'),
+    path('doctor/visit/<int:visit_id>/delete/', views.doctor_visit_delete, name='doctor_visit_delete'),
     # path('api/chat/', views.chat_api, name='chat_api'),
     # Add endpoints for patient login, view medications, tests, and files as required.
 

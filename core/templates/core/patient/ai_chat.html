@@ -395,16 +395,7 @@
 
         <!-- Messages Area -->
         <div class="chat-messages" id="chat-messages">
-            {% for message in messages %}
-            <div class="message-row {% if message.is_ai %}ai-message{% else %}user-message{% endif %}">
-                <div class="message-bubble {% if message.is_ai %}ai-bubble{% else %}user-bubble{% endif %}">
-                    <div class="message-content">{{ message.message|safe }}</div>
-                    <div class="message-footer">
-                        <div class="message-time">{{ message.created_at|time:"g:i A" }}</div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+            <!-- Past messages will be loaded here -->
 
             <!-- Typing indicator (hidden by default) -->
             <div class="typing-indicator" id="typing-indicator" style="display: none;">
@@ -530,7 +521,7 @@
             // Show user message
             const userMessageRow = document.createElement('div');
             userMessageRow.className = 'message-row user-message';
-            
+
             let messageContent = '';
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
@@ -571,16 +562,16 @@
                 },
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                // Hide typing indicator
-                typingIndicator.style.display = 'none';
+                .then(response => response.json())
+                .then(data => {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
 
-                // Show AI response
-                if (data.message) {
-                    const aiMessageRow = document.createElement('div');
-                    aiMessageRow.className = 'message-row ai-message';
-                    aiMessageRow.innerHTML = `
+                    // Show AI response
+                    if (data.message) {
+                        const aiMessageRow = document.createElement('div');
+                        aiMessageRow.className = 'message-row ai-message';
+                        aiMessageRow.innerHTML = `
                         <div class="message-bubble ai-bubble">
                             <div class="message-content">${marked.parse(data.message)}</div>
                             <div class="message-footer">
@@ -588,12 +579,12 @@
                             </div>
                         </div>
                     `;
-                    messagesArea.appendChild(aiMessageRow);
-                } else {
-                    // Show error message
-                    const errorRow = document.createElement('div');
-                    errorRow.className = 'message-row ai-message';
-                    errorRow.innerHTML = `
+                        messagesArea.appendChild(aiMessageRow);
+                    } else {
+                        // Show error message
+                        const errorRow = document.createElement('div');
+                        errorRow.className = 'message-row ai-message';
+                        errorRow.innerHTML = `
                         <div class="message-bubble ai-bubble">
                             <div class="message-content">Error: ${data.error || 'Unknown error occurred'}</div>
                             <div class="message-footer">
@@ -601,20 +592,20 @@
                             </div>
                         </div>
                     `;
-                    messagesArea.appendChild(errorRow);
-                }
+                        messagesArea.appendChild(errorRow);
+                    }
 
-                // Clear file input
-                clearFileInput();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                typingIndicator.style.display = 'none';
-                
-                // Show error message
-                const errorRow = document.createElement('div');
-                errorRow.className = 'message-row ai-message';
-                errorRow.innerHTML = `
+                    // Clear file input
+                    clearFileInput();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    typingIndicator.style.display = 'none';
+
+                    // Show error message
+                    const errorRow = document.createElement('div');
+                    errorRow.className = 'message-row ai-message';
+                    errorRow.innerHTML = `
                     <div class="message-bubble ai-bubble">
                         <div class="message-content">Network error. Please try again.</div>
                         <div class="message-footer">
@@ -622,15 +613,15 @@
                         </div>
                     </div>
                 `;
-                messagesArea.appendChild(errorRow);
-            })
-            .finally(() => {
-                // Re-enable input
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
-                messagesArea.scrollTop = messagesArea.scrollHeight;
-            });
+                    messagesArea.appendChild(errorRow);
+                })
+                .finally(() => {
+                    // Re-enable input
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                });
         });
 
         // Handle Enter key
@@ -646,46 +637,86 @@
             fetch('/api/chat/', {
                 method: 'GET',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
                 }
             })
             .then(response => response.json())
             .then(data => {
                 const messagesArea = document.getElementById('chat-messages');
-                
-                // Clear existing messages
+                // Keep typing indicator
+                const typingIndicator = document.getElementById('typing-indicator');
                 messagesArea.innerHTML = '';
-                
-                // Add each message
-                data.messages.forEach(msg => {
-                    const messageRow = document.createElement('div');
-                    messageRow.className = `message-row ${msg.is_ai ? 'ai-message' : 'user-message'}`;
-                    
-                    const time = new Date(msg.timestamp).toLocaleTimeString([], { 
-                        hour: 'numeric', 
-                        minute: '2-digit' 
-                    });
-                    
-                    messageRow.innerHTML = `
-                        <div class="message-bubble ${msg.is_ai ? 'ai-bubble' : 'user-bubble'}">
-                            <div class="message-content">${msg.is_ai ? marked.parse(msg.message) : msg.message}</div>
-                            <div class="message-footer">
-                                <div class="message-time">${time}</div>
+                messagesArea.appendChild(typingIndicator);
+
+                if (data.messages && Array.isArray(data.messages)) {
+                    data.messages.forEach(msg => {
+                        const messageRow = document.createElement('div');
+                        messageRow.className = `message-row ${msg.is_ai ? 'ai-message' : 'user-message'}`;
+
+                        // Format message content based on type
+                        let formattedMessage = msg.is_ai ? marked.parse(msg.message) : msg.message;
+                        
+                        // Handle file messages
+                        if (msg.file_info) {
+                            formattedMessage += `<p><i class="fas fa-file"></i> ${msg.file_info}</p>`;
+                        }
+
+                        const time = new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        });
+
+                        messageRow.innerHTML = `
+                            <div class="message-bubble ${msg.is_ai ? 'ai-bubble' : 'user-bubble'}">
+                                <div class="message-content">${formattedMessage}</div>
+                                <div class="message-footer">
+                                    <div class="message-time">${time}</div>
+                                </div>
                             </div>
-                        </div>
-                    `;
-                    messagesArea.appendChild(messageRow);
-                });
-                
-                // Scroll to bottom
+                        `;
+                        
+                        // Insert before typing indicator
+                        messagesArea.insertBefore(messageRow, typingIndicator);
+                    });
+                }
+
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             })
             .catch(error => {
                 console.error('Error loading chat history:', error);
+                // Show error message to user
+                const messagesArea = document.getElementById('chat-messages');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'message-row ai-message';
+                errorMessage.innerHTML = `
+                    <div class="message-bubble ai-bubble">
+                        <div class="message-content">Failed to load chat history. Please refresh the page.</div>
+                    </div>
+                `;
+                messagesArea.insertBefore(errorMessage, typingIndicator);
             });
         }
 
+        // Load chat history when page loads
         loadChatHistory();
+
+        // Reload chat history after reset
+        document.getElementById('reset-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/api/chat/reset/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    loadChatHistory(); // Reload messages after reset
+                }
+            })
+            .catch(error => console.error('Error resetting chat:', error));
+        });
 
         // Add this to your existing JavaScript
         function handleStream(response) {
@@ -695,7 +726,7 @@
 
             return new Promise((resolve, reject) => {
                 function pushData() {
-                    reader.read().then(({done, value}) => {
+                    reader.read().then(({ done, value }) => {
                         if (done) {
                             if (buffer) {
                                 try {
@@ -709,7 +740,7 @@
                             return;
                         }
 
-                        buffer += decoder.decode(value, {stream: true});
+                        buffer += decoder.decode(value, { stream: true });
                         const lines = buffer.split('\n');
                         buffer = lines.pop();
 

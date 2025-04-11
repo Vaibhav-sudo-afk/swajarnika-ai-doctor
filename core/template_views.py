@@ -599,43 +599,40 @@ def doctor_visit_delete(request, visit_id):
 
 
 @doctor_required
-def doctor_file_upload(request, patient_id):
-    patient = get_object_or_404(
-        Patient, id=patient_id, doctor=request.user.doctor)
-
+def doctor_file_upload(request, visit_id):
     if request.method == 'POST':
         try:
-            file = request.FILES.get('file')
-            description = request.POST.get('description', '')
-
-            # Create a new visit for the file if no visit is specified
-            visit = Visit.objects.create(
-                patient=patient,
-                doctor=request.user.doctor,
-                date_of_visit=datetime.now().date(),
-                diagnosis="File Upload",
-                treatment_plan="Document Upload Only"
-            )
-
-            FileUpload.objects.create(
-                visit=visit,
-                file_path=file,
-                description=description
-            )
+            visit = get_object_or_404(Visit, id=visit_id, doctor=request.user.doctor)
+            files = request.FILES.getlist('files[]')
+            
+            for file in files:
+                FileUpload.objects.create(
+                    visit=visit,
+                    file_path=file,
+                    description=f"Uploaded during visit on {visit.date_of_visit.strftime('%Y-%m-%d')}"
+                )
+            
+            messages.success(request, 'Files uploaded successfully.')
+            
         except Exception as e:
-            return render(request, 'core/doctor/patient_detail.html')
-
-    return redirect('doctor_patient_detail', patient_id=patient_id)
+            messages.error(request, f'Error uploading files: {str(e)}')
+        
+        return redirect('doctor_visit_detail', visit_id=visit_id)
+    
+    return redirect('doctor_visit_detail', visit_id=visit_id)
 
 
 @doctor_required
 def doctor_file_delete(request, file_id):
     if request.method == 'POST':
-        file = get_object_or_404(
-            FileUpload, id=file_id, visit__patient__doctor=request.user.doctor)
-        patient_id = file.visit.patient.id
-        file.delete()
-    return redirect('doctor_patient_detail', patient_id=patient_id)
+        file = get_object_or_404(FileUpload, id=file_id, visit__doctor=request.user.doctor)
+        visit_id = file.visit.id
+        try:
+            file.delete()
+            messages.success(request, 'File deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting file: {str(e)}')
+        return redirect('doctor_visit_detail', visit_id=visit_id)
 
 
 @patient_required

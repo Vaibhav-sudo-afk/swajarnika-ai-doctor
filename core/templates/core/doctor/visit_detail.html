@@ -5,7 +5,7 @@
 <div class="container mt-5">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-calendar-check me-2"></i>Visit Details</h2>
+        <h2 class="text-primary"><i class="fas fa-calendar-check me-2"></i>Visit Details</h2>
         <div>
             {% if not is_edit %}
             <a href="{% url 'doctor_visit_update' visit.id %}" class="btn btn-primary me-2">
@@ -21,35 +21,35 @@
     <form method="POST" action="{% if is_edit %}{% url 'doctor_visit_update' visit.id %}{% endif %}">
         {% csrf_token %}
         <!-- Visit Information Card -->
-        <div class="card mb-4">
-            <div class="card-header">
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
                 <h3 class="mb-0"><i class="fas fa-info-circle me-2"></i>Visit Information</h3>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" name="date_of_visit"
+                            <label class="form-label fw-bold text-white">Date</label>
+                            <input type="date" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="date_of_visit"
                                 value="{{ visit.date_of_visit|date:'Y-m-d' }}" {% if not is_edit %}disabled{% endif %}>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Patient</label>
-                            <input type="text" class="form-control" value="{{ visit.patient.name }}" disabled>
+                            <label class="form-label fw-bold text-white">Patient</label>
+                            <input type="text" class="form-control bg-light text-dark" value="{{ visit.patient.name }}" disabled>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Diagnosis</label>
-                            <textarea class="form-control" name="diagnosis" rows="4" {% if not is_edit %}disabled{% endif%}>{{ visit.diagnosis }}</textarea>
+                            <label class="form-label fw-bold text-white">Diagnosis</label>
+                            <textarea class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="diagnosis" rows="4" {% if not is_edit %}disabled{% endif%}>{{ visit.diagnosis }}</textarea>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label">Treatment Plan</label>
-                            <textarea class="form-control" name="treatment_plan" rows="4" {% if not is_edit %}disabled{%endif %}>{{ visit.treatment_plan }}</textarea>
+                            <label class="form-label fw-bold text-white">Treatment Plan</label>
+                            <textarea class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="treatment_plan" rows="4" {% if not is_edit %}disabled{%endif %}>{{ visit.treatment_plan }}</textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Additional Notes</label>
-                            <textarea class="form-control" name="notes" rows="4" {% if not is_edit %}disabled{% endif%}>{{ visit.notes }}</textarea>
+                            <label class="form-label fw-bold text-white">Additional Notes</label>
+                            <textarea class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="notes" rows="4" {% if not is_edit %}disabled{% endif%}>{{ visit.notes }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -57,12 +57,11 @@
         </div>
 
         <!-- Medications Card -->
-
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <h3 class="mb-0"><i class="fas fa-pills me-2"></i>Prescribed Medications</h3>
                 {% if is_edit %}
-                <button type="button" class="btn btn-primary btn-sm" onclick="addMedication()">
+                <button type="button" class="btn btn-light btn-sm" onclick="addMedication()">
                     <i class="fas fa-plus me-1"></i>Add Medication
                 </button>
                 {% endif %}
@@ -73,20 +72,20 @@
                     <div class="medication-entry mb-3">
                         <div class="row">
                             <div class="col-md-3">
-                                <input type="text" class="form-control" name="medication_name[]"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="medication_name[]"
                                     value="{{ medication.medication_name }}" placeholder="Medication Name" {% if not is_edit %}disabled{% endif %}>
                             </div>
                             <div class="col-md-3">
-                                <input type="text" class="form-control" name="medication_instructions[]"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="medication_instructions[]"
                                     value="{{ medication.instructions }}" placeholder="Instructions" {% if not is_edit%}disabled{% endif %}>
                             </div>
                             <div class="col-md-3">
-                                <input type="text" class="form-control" name="medication_missed_instructions[]"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="medication_missed_instructions[]"
                                     value="{{ medication.missed_dose_instructions }}"
                                     placeholder="Missed Dose Instructions" {% if not is_edit %}disabled{% endif %}>
                             </div>
                             <div class="col-md-2">
-                                <input type="text" class="form-control" name="medication_reason[]"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="medication_reason[]"
                                     value="{{ medication.reason }}" placeholder="Reason" {% if not is_edit %}disabled{% endif %}>
                             </div>
                             {% if is_edit %}
@@ -106,11 +105,11 @@
         </div>
 
         <!-- Tests Card -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                 <h3 class="mb-0"><i class="fas fa-vial me-2"></i>Ordered Tests</h3>
                 {% if is_edit %}
-                <button type="button" class="btn btn-primary btn-sm" onclick="addTest()">
+                <button type="button" class="btn btn-light btn-sm" onclick="addTest()">
                     <i class="fas fa-plus me-1"></i>Add Test
                 </button>
                 {% endif %}
@@ -121,15 +120,15 @@
                     <div class="test-entry mb-3">
                         <div class="row">
                             <div class="col-md-4">
-                                <input type="text" class="form-control" name="test_name[]" value="{{ test.test_name }}"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="test_name[]" value="{{ test.test_name }}"
                                     placeholder="Test Name" {% if not is_edit %}disabled{% endif %}>
                             </div>
                             <div class="col-md-3">
-                                <input type="text" class="form-control" name="test_region[]" value="{{ test.region }}"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="test_region[]" value="{{ test.region }}"
                                     placeholder="Region" {% if not is_edit %}disabled{% endif %}>
                             </div>
                             <div class="col-md-4">
-                                <input type="text" class="form-control" name="test_reason[]" value="{{ test.reason }}"
+                                <input type="text" class="form-control {% if not is_edit %}bg-light text-dark{% endif %}" name="test_reason[]" value="{{ test.reason }}"
                                     placeholder="Reason" {% if not is_edit %}disabled{% endif %}>
                             </div>
                             {% if is_edit %}
@@ -145,6 +144,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- File Upload Section -->
+        <!-- <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="fas fa-file-medical me-2"></i>Visit Files</h3>
+                {% if is_edit %}
+                <form action="{% url 'doctor_file_upload' visit.id %}" method="POST" enctype="multipart/form-data" class="d-inline">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <input type="file" class="form-control form-control-sm" name="files[]" multiple>
+                        <input type="hidden" name="visit_id" value="{{ visit.id }}">
+                        <button type="submit" class="btn btn-dark btn-sm">
+                            <i class="fas fa-upload me-1"></i>Upload
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>File Name</th>
+                                <th>Description</th>
+                                <th>Uploaded</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                            <tr>
+                                <td>{{ file.file_path.name|filename }}</td>
+                                <td>{{ file.description|default:"-" }}</td>
+                                <td>{{ file.uploaded_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ file.file_path.url }}" class="btn btn-sm btn-primary" target="_blank">
+                                            <i class="fas fa-download me-1"></i>Download
+                                        </a>
+                                        {% if is_edit %}
+                                        <button type="button" class="btn btn-sm btn-danger" onclick="confirmDeleteFile('{{ file.id }}')">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No files uploaded for this visit.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div> -->
 
         {% if is_edit %}
         <div class="d-flex justify-content-end mb-4">
