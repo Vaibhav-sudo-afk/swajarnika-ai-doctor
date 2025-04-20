@@ -3,158 +3,104 @@
 
 {% block extra_css %}
 <style>
-    body {
-        background-color: #f5f7fa;
-        font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
     .chat-container {
         display: flex;
         flex-direction: column;
         height: 100vh;
         max-width: 1200px;
         margin: 0 auto;
-        padding: 1.5rem;
-        box-sizing: border-box;
     }
 
     .messages-container {
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        background-color: #ffffff;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         overflow: hidden;
-        margin: 0;
-        transition: all 0.3s ease;
+        margin: 1rem;
     }
 
     .chat-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 1.5rem 2rem;
-        background: linear-gradient(135deg, #3498db, #2980b9);
-        color: white;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem 1.5rem;
+        background-color: #fff;
+        border-bottom: 1px solid #e9ecef;
     }
 
     .chat-title {
-        font-size: 1.4rem;
+        font-size: 1.25rem;
         font-weight: 600;
+        color: #212529;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-    }
-
-    .chat-title i {
-        font-size: 1.5rem;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 0.5rem;
-        border-radius: 50%;
+        gap: 0.5rem;
     }
 
     .chat-actions {
         display: flex;
-        gap: 0.75rem;
-    }
-
-    .chat-actions button {
-        background-color: rgba(255, 255, 255, 0.15);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-
-    .chat-actions button:hover {
-        background-color: rgba(255, 255, 255, 0.25);
-        transform: translateY(-1px);
-    }
-
-    .chat-actions button i {
-        margin-right: 0.5rem;
+        gap: 0.5rem;
     }
 
     .chat-messages {
         flex-grow: 1;
         overflow-y: auto;
-        padding: 2rem;
+        padding: 1.5rem;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
-        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f3f8' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        scroll-behavior: smooth;
+        gap: 1rem;
     }
 
     .message-row {
         display: flex;
-        margin-bottom: 0.75rem;
-        max-width: 85%;
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        margin-bottom: 1rem;
     }
 
     .user-message {
         justify-content: flex-end;
-        margin-left: auto;
     }
 
     .ai-message {
         justify-content: flex-start;
-        margin-right: auto;
     }
 
     .message-bubble {
-        padding: 1rem 1.25rem;
+        max-width: 80%;
+        padding: 0.75rem 1rem;
         border-radius: 18px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        position: relative;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     .user-bubble {
-        background: linear-gradient(135deg, #4b6cb7, #182848);
+        background-color: #007bff;
         color: white;
         border-bottom-right-radius: 4px;
     }
 
     .ai-bubble {
-        background-color: #f8f9fb;
-        color: #333;
+        background-color: white;
+        color: #212529;
         border-bottom-left-radius: 4px;
-        border-left: 4px solid #3498db;
     }
 
     .message-content {
-        font-size: 1rem;
-        line-height: 1.6;
+        font-size: 0.95rem;
+        line-height: 1.5;
         white-space: pre-wrap;
     }
 
     .message-footer {
         display: flex;
         justify-content: flex-end;
-        margin-top: 0.5rem;
-        opacity: 0.7;
+        margin-top: 0.25rem;
     }
 
     .message-time {
         font-size: 0.75rem;
-        font-weight: 500;
+        color: rgba(255, 255, 255, 0.7);
     }
 
     .ai-bubble .message-time {
@@ -162,16 +108,14 @@
     }
 
     .input-area {
-        padding: 1.5rem 2rem;
+        padding: 1rem 1.5rem;
         background-color: white;
-        border-top: 1px solid #eaecef;
-        border-radius: 0 0 16px 16px;
+        border-top: 1px solid #e9ecef;
     }
 
     .input-form {
         display: flex;
-        gap: 0.75rem;
-        align-items: center;
+        gap: 0.5rem;
     }
 
     .message-input-container {
@@ -181,68 +125,57 @@
 
     .message-input {
         width: 100%;
-        padding: 1rem 1.25rem;
-        border: 1px solid #e1e5eb;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ced4da;
         border-radius: 24px;
-        font-size: 1rem;
+        font-size: 0.95rem;
         outline: none;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+        transition: border-color 0.15s ease-in-out;
     }
 
     .message-input:focus {
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        border-color: #007bff;
     }
 
     .send-button {
-        background: linear-gradient(135deg, #3498db, #2980b9);
+        background-color: #007bff;
         color: white;
         border: none;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
+        width: 42px;
+        height: 42px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 3px 10px rgba(52, 152, 219, 0.3);
+        transition: background-color 0.15s ease-in-out;
     }
 
     .send-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-    }
-
-    .send-button:active {
-        transform: translateY(0);
+        background-color: #0069d9;
     }
 
     .send-button:disabled {
-        background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        background-color: #6c757d;
         cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
     }
 
     .typing-indicator {
         display: inline-flex;
         align-items: center;
-        padding: 0.75rem 1.25rem;
-        background-color: rgba(255, 255, 255, 0.9);
+        padding: 0.5rem 1rem;
+        background-color: white;
         border-radius: 18px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         margin-bottom: 1rem;
-        border-left: 4px solid #3498db;
     }
 
     .typing-dot {
         width: 8px;
         height: 8px;
-        background-color: #3498db;
+        background-color: #6c757d;
         border-radius: 50%;
-        margin: 0 3px;
+        margin: 0 2px;
         animation: typing-animation 1.4s infinite ease-in-out;
     }
 
@@ -267,158 +200,46 @@
         }
 
         30% {
-            transform: translateY(-8px);
+            transform: translateY(-5px);
         }
     }
 
     .ollama-status {
         display: flex;
         justify-content: center;
-        padding: 1rem 0 0.5rem;
-        font-size: 0.85rem;
+        padding: 0.5rem;
+        font-size: 0.75rem;
         color: #6c757d;
-        opacity: 0.8;
     }
 
     .status-online {
-        color: #27ae60;
-        font-weight: 500;
+        color: #28a745;
     }
 
     .status-offline {
-        color: #e74c3c;
-        font-weight: 500;
+        color: #dc3545;
     }
 
     .status-online i,
     .status-offline i {
-        font-size: 0.75rem;
-        margin-right: 0.4rem;
+        font-size: 0.6rem;
+        margin-right: 0.25rem;
     }
 
-    /* File upload elements */
-    .file-upload-area {
-        margin-top: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        background-color: #f8f9fb;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        border: 1px dashed #ced4da;
-    }
-
-    .file-upload-button {
-        background-color: #e9ecef;
-        border: 1px solid #ced4da;
-        border-radius: 8px;
-        padding: 0.4rem 0.75rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        transition: all 0.2s ease;
-    }
-
-    .file-upload-button:hover {
-        background-color: #dee2e6;
-        transform: translateY(-1px);
-    }
-
-    .file-name {
-        font-size: 0.9rem;
-        color: #495057;
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-weight: 500;
-    }
-
-    .file-clear {
-        color: #e74c3c;
-        cursor: pointer;
-        font-size: 0.9rem;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background-color: rgba(231, 76, 60, 0.1);
-        transition: all 0.2s ease;
-    }
-
-    .file-clear:hover {
-        background-color: rgba(231, 76, 60, 0.2);
-        transform: scale(1.1);
-    }
-
-    /* Welcome message styling */
-    .welcome-message {
-        text-align: center;
-        margin: 1rem 0 2rem;
-        padding: 1.5rem;
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(41, 128, 185, 0.1));
-        border-radius: 12px;
-        border-left: 4px solid #3498db;
-        animation: fadeIn 0.5s ease-out;
-    }
-
-    .welcome-message h2 {
-        color: #2c3e50;
-        font-size: 1.4rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .welcome-message p {
-        color: #7f8c8d;
-        font-size: 1rem;
-        line-height: 1.6;
-    }
-
-    /* Conversation date separator */
-    .date-separator {
-        display: flex;
-        align-items: center;
-        margin: 1.5rem 0;
-        color: #95a5a6;
-        font-size: 0.85rem;
-    }
-
-    .date-separator::before,
-    .date-separator::after {
-        content: "";
-        flex: 1;
-        border-bottom: 1px solid #e0e0e0;
-    }
-
-    .date-separator::before {
-        margin-right: 0.75rem;
-    }
-
-    .date-separator::after {
-        margin-left: 0.75rem;
-    }
-
-    /* Markdown styling */
+    /* Markdown styling for AI responses */
     .ai-bubble .message-content h1,
     .ai-bubble .message-content h2,
     .ai-bubble .message-content h3,
     .ai-bubble .message-content h4,
     .ai-bubble .message-content h5,
     .ai-bubble .message-content h6 {
-        margin-top: 1rem;
-        margin-bottom: 0.75rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
         font-weight: 600;
-        color: #2c3e50;
     }
 
     .ai-bubble .message-content h1 {
         font-size: 1.5rem;
-        border-bottom: 1px solid #eaecef;
-        padding-bottom: 0.5rem;
     }
 
     .ai-bubble .message-content h2 {
@@ -429,261 +250,126 @@
         font-size: 1.2rem;
     }
 
+    .ai-bubble .message-content h4 {
+        font-size: 1.1rem;
+    }
+
+    .ai-bubble .message-content h5 {
+        font-size: 1rem;
+    }
+
+    .ai-bubble .message-content h6 {
+        font-size: 0.9rem;
+    }
+
     .ai-bubble .message-content p {
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
 
     .ai-bubble .message-content ul,
     .ai-bubble .message-content ol {
-        margin: 0.75rem 0;
-        padding-left: 1.75rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
     }
 
     .ai-bubble .message-content li {
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.25rem;
     }
 
     .ai-bubble .message-content code {
-        background-color: #f1f4f7;
+        background-color: #f8f9fa;
         padding: 0.2rem 0.4rem;
-        border-radius: 4px;
-        font-family: 'Fira Code', 'Courier New', monospace;
+        border-radius: 3px;
+        font-family: monospace;
         font-size: 0.9em;
-        color: #e83e8c;
     }
 
     .ai-bubble .message-content pre {
-        background-color: #2d3748;
-        color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
+        background-color: #f8f9fa;
+        padding: 0.75rem;
+        border-radius: 5px;
         overflow-x: auto;
-        margin: 0.75rem 0;
-        font-family: 'Fira Code', 'Courier New', monospace;
-    }
-
-    .ai-bubble .message-content pre code {
-        background-color: transparent;
-        color: inherit;
-        padding: 0;
+        margin: 0.5rem 0;
     }
 
     .ai-bubble .message-content blockquote {
-        border-left: 4px solid #3498db;
-        padding: 0.5rem 1rem;
-        background-color: rgba(52, 152, 219, 0.05);
-        color: #34495e;
-        margin: 0.75rem 0;
-        border-radius: 0 8px 8px 0;
+        border-left: 3px solid #ced4da;
+        padding-left: 0.75rem;
+        color: #6c757d;
+        margin: 0.5rem 0;
     }
 
     .ai-bubble .message-content table {
         border-collapse: collapse;
         width: 100%;
-        margin: 1rem 0;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        margin: 0.5rem 0;
     }
 
     .ai-bubble .message-content th,
     .ai-bubble .message-content td {
-        border: 1px solid #e5e7eb;
-        padding: 0.75rem;
+        border: 1px solid #ced4da;
+        padding: 0.5rem;
         text-align: left;
     }
 
     .ai-bubble .message-content th {
-        background-color: #f8fafc;
-        font-weight: 600;
-    }
-
-    .ai-bubble .message-content tr:nth-child(even) {
-        background-color: #f9fafb;
+        background-color: #f8f9fa;
     }
 
     .ai-bubble .message-content a {
-        color: #3498db;
+        color: #007bff;
         text-decoration: none;
-        border-bottom: 1px dotted #3498db;
-        transition: all 0.2s ease;
     }
 
     .ai-bubble .message-content a:hover {
-        color: #2980b9;
-        border-bottom: 1px solid #2980b9;
+        text-decoration: underline;
     }
 
-    /* Empty state styling */
-    .empty-chat {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #7f8c8d;
-        padding: 2rem;
-        text-align: center;
-    }
-
-    .empty-chat i {
-        font-size: 4rem;
-        color: #3498db;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    .empty-chat h3 {
-        font-size: 1.5rem;
-        margin-bottom: 0.75rem;
-        color: #2c3e50;
-    }
-
-    .empty-chat p {
-        max-width: 500px;
-        line-height: 1.6;
-    }
-
-    /* Feature pill badges */
-    .feature-badge {
-        display: inline-block;
-        background-color: rgba(52, 152, 219, 0.1);
-        color: #3498db;
-        font-size: 0.7rem;
+    .ai-bubble .message-content strong {
         font-weight: 600;
-        padding: 0.2rem 0.5rem;
-        border-radius: 12px;
-        margin-left: 0.5rem;
-        text-transform: uppercase;
     }
 
-    /* Tooltips */
-    [data-tooltip] {
-        position: relative;
-        cursor: help;
+    .ai-bubble .message-content em {
+        font-style: italic;
     }
 
-    [data-tooltip]::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        background-color: #34495e;
-        color: white;
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        width: max-content;
-        max-width: 300px;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%) translateY(-10px);
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.2s ease;
-        z-index: 10;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    }
-
-    [data-tooltip]:hover::after {
-        opacity: 1;
-        transform: translateX(-50%) translateY(-5px);
-    }
-
-    /* AI profile badge */
-    .ai-profile {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        position: absolute;
-        top: -1.5rem;
-        left: 1rem;
-        background-color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        font-size: 0.8rem;
-        color: #2c3e50;
-    }
-
-    .ai-profile img {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    /* File attachments in messages */
-    .file-attachment {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+    .file-upload-area {
         margin-top: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        background-color: rgba(0, 0, 0, 0.05);
-        border-radius: 8px;
-        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
-    .file-attachment i {
-        font-size: 1.2rem;
+    .file-upload-button {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
-    .user-bubble .file-attachment {
-        background-color: rgba(255, 255, 255, 0.1);
+    .file-upload-button:hover {
+        background-color: #e9ecef;
     }
 
-    /* Chat scroll animations */
-    .chat-messages::-webkit-scrollbar {
-        width: 8px;
+    .file-name {
+        font-size: 0.85rem;
+        color: #6c757d;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    .chat-messages::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.3);
-        border-radius: 20px;
-        transition: all 0.3s ease;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.5);
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .chat-container {
-            padding: 0.75rem;
-        }
-
-        .messages-container {
-            border-radius: 12px;
-        }
-
-        .chat-header {
-            padding: 1rem 1.25rem;
-        }
-
-        .chat-title {
-            font-size: 1.2rem;
-        }
-
-        .chat-messages {
-            padding: 1.25rem;
-        }
-
-        .message-row {
-            max-width: 95%;
-        }
-
-        .input-area {
-            padding: 1rem 1.25rem;
-        }
-
-        .send-button {
-            width: 45px;
-            height: 45px;
-        }
+    .file-clear {
+        color: #dc3545;
+        cursor: pointer;
+        font-size: 0.85rem;
     }
 </style>
 {% endblock extra_css %}
@@ -694,15 +380,14 @@
         <!-- Chat Header -->
         <div class="chat-header">
             <div class="chat-title">
-                <i class="fas fa-heartbeat"></i> AI Health Assistant
-                <span class="feature-badge">Pro</span>
+                <i class="fas fa-robot"></i> AI Health Assistant
             </div>
             <div class="chat-actions">
                 <form method="post" id="reset-form">
                     {% csrf_token %}
                     <input type="hidden" name="reset_chat" value="true">
-                    <button type="submit" class="btn" data-tooltip="Start a new conversation">
-                        <i class="fas fa-redo-alt"></i> New Chat
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-redo-alt"></i> Reset Chat
                     </button>
                 </form>
             </div>
@@ -710,13 +395,7 @@
 
         <!-- Messages Area -->
         <div class="chat-messages" id="chat-messages">
-            <!-- Empty state - only shown when no messages -->
-            <div class="empty-chat" id="empty-chat">
-                <i class="fas fa-comments"></i>
-                <h3>Welcome to your AI Health Assistant</h3>
-                <p>I'm here to answer your health questions, discuss symptoms, and provide general health information.
-                    Your conversation will be private and secure.</p>
-            </div>
+            <!-- Past messages will be loaded here -->
 
             <!-- Typing indicator (hidden by default) -->
             <div class="typing-indicator" id="typing-indicator" style="display: none;">
@@ -732,7 +411,7 @@
                 {% csrf_token %}
                 <div class="message-input-container">
                     <input type="text" name="message" id="message-input" class="message-input"
-                        placeholder="Ask me about your health concerns..." required autocomplete="off">
+                        placeholder="Type a message..." required autocomplete="off">
 
                     <!-- File upload area (initially hidden) -->
                     <div class="file-upload-area" id="file-upload-area" style="display: none;">
@@ -742,8 +421,7 @@
                 </div>
 
                 <!-- File upload button -->
-                <label for="file-input" class="send-button"
-                    style="background: linear-gradient(135deg, #95a5a6, #7f8c8d);">
+                <label for="file-input" class="send-button" style="background-color: #6c757d;">
                     <i class="fas fa-paperclip"></i>
                 </label>
                 <input type="file" id="file-input" name="file" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
@@ -775,7 +453,6 @@
         const fileUploadArea = document.getElementById('file-upload-area');
         const fileName = document.getElementById('file-name');
         const fileClear = document.getElementById('file-clear');
-        const emptyChat = document.getElementById('empty-chat');
         const patientId = "{{ user.patient.id|default:'0' }}";
 
         // Configure marked.js
@@ -783,12 +460,11 @@
             breaks: true,
             gfm: true,
             sanitize: false,  // Allow HTML to support more formatting
-            headerIds: false,  // Disable header IDs to avoid conflicts
-            highlight: function (code, lang) {
-                // Add syntax highlighting if you want to add a library later
-                return code;
-            }
+            headerIds: false  // Disable header IDs to avoid conflicts
         });
+
+        // Scroll to bottom
+        messagesArea.scrollTop = messagesArea.scrollHeight;
 
         // File input change handler
         fileInput.addEventListener('change', function () {
@@ -826,39 +502,12 @@
             fileName.textContent = '';
         }
 
-        // Format date for display
-        function formatDate(date) {
-            const now = new Date();
-            const messageDate = new Date(date);
-
-            // If today
-            if (messageDate.toDateString() === now.toDateString()) {
-                return "Today";
-            }
-
-            // If yesterday
-            const yesterday = new Date(now);
-            yesterday.setDate(now.getDate() - 1);
-            if (messageDate.toDateString() === yesterday.toDateString()) {
-                return "Yesterday";
-            }
-
-            // Otherwise full date
-            const options = { weekday: 'long', month: 'long', day: 'numeric' };
-            return messageDate.toLocaleDateString(undefined, options);
-        }
-
         // Form submission handler
         chatForm.addEventListener('submit', function (event) {
             event.preventDefault();
 
             const message = messageInput.value.trim();
             if (!message && !fileInput.files.length) return;
-
-            // Hide empty state if visible
-            if (emptyChat) {
-                emptyChat.style.display = 'none';
-            }
 
             // Clear input and disable
             messageInput.value = '';
@@ -877,9 +526,7 @@
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 messageContent += `<p>${message || 'I\'m sending you a file.'}</p>`;
-                messageContent += `<div class="file-attachment">
-                                    <i class="fas fa-file-alt"></i> ${file.name}
-                                </div>`;
+                messageContent += `<p><i class="fas fa-file"></i> ${file.name}</p>`;
             } else {
                 messageContent = message.replace(/\n/g, '<br>');
             }
@@ -916,7 +563,6 @@
                 body: formData
             })
                 .then(response => response.json())
-                // After the fetch API call, this should be the completion of the function:
                 .then(data => {
                     // Hide typing indicator
                     typingIndicator.style.display = 'none';
@@ -925,172 +571,234 @@
                     if (data.message) {
                         const aiMessageRow = document.createElement('div');
                         aiMessageRow.className = 'message-row ai-message';
-
-                        // Parse markdown in the response
-                        const parsedMessage = marked.parse(data.message);
-
                         aiMessageRow.innerHTML = `
-                            <div class="message-bubble ai-bubble">
-                                <div class="ai-profile">
-                                    
-                                    Health Assistant
-                                </div>
-                                <div class="message-content">${parsedMessage}</div>
-                                <div class="message-footer">
-                                    <div class="message-time">${timeString}</div>
-                                </div>
-                            </div>
-                        `;
-                        messagesArea.appendChild(aiMessageRow);
-                    }
-
-                    // Re-enable input
-                    messageInput.disabled = false;
-                    sendButton.disabled = false;
-                    messageInput.focus();
-
-                    // Clear file input if any
-                    clearFileInput();
-
-                    // Scroll to bottom
-                    messagesArea.scrollTop = messagesArea.scrollHeight;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-
-                    // Hide typing indicator
-                    typingIndicator.style.display = 'none';
-
-                    // Show error message
-                    const errorMessageRow = document.createElement('div');
-                    errorMessageRow.className = 'message-row ai-message';
-                    errorMessageRow.innerHTML = `
                         <div class="message-bubble ai-bubble">
-                            <div class="message-content">
-                                <p>Sorry, I encountered an error processing your request. Please try again.</p>
-                            </div>
+                            <div class="message-content">${marked.parse(data.message)}</div>
                             <div class="message-footer">
                                 <div class="message-time">${timeString}</div>
                             </div>
                         </div>
                     `;
-                    messagesArea.appendChild(errorMessageRow);
+                        messagesArea.appendChild(aiMessageRow);
+                    } else {
+                        // Show error message
+                        const errorRow = document.createElement('div');
+                        errorRow.className = 'message-row ai-message';
+                        errorRow.innerHTML = `
+                        <div class="message-bubble ai-bubble">
+                            <div class="message-content">Error: ${data.error || 'Unknown error occurred'}</div>
+                            <div class="message-footer">
+                                <div class="message-time">${timeString}</div>
+                            </div>
+                        </div>
+                    `;
+                        messagesArea.appendChild(errorRow);
+                    }
 
+                    // Clear file input
+                    clearFileInput();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    typingIndicator.style.display = 'none';
+
+                    // Show error message
+                    const errorRow = document.createElement('div');
+                    errorRow.className = 'message-row ai-message';
+                    errorRow.innerHTML = `
+                    <div class="message-bubble ai-bubble">
+                        <div class="message-content">Network error. Please try again.</div>
+                        <div class="message-footer">
+                            <div class="message-time">${timeString}</div>
+                        </div>
+                    </div>
+                `;
+                    messagesArea.appendChild(errorRow);
+                })
+                .finally(() => {
                     // Re-enable input
                     messageInput.disabled = false;
                     sendButton.disabled = false;
                     messageInput.focus();
-
-                    // Scroll to bottom
                     messagesArea.scrollTop = messagesArea.scrollHeight;
                 });
         });
 
-        // Function to load chat history
-        function loadChatHistory() {
-            fetch(`/api/chat/history/?patient_id=${patientId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.messages && data.messages.length > 0) {
-                        // Hide empty state
-                        if (emptyChat) {
-                            emptyChat.style.display = 'none';
-                        }
-
-                        let currentDate = '';
-
-                        data.messages.forEach(message => {
-                            const messageDate = new Date(message.timestamp);
-                            const formattedDate = formatDate(messageDate);
-
-                            // Add date separator if date changes
-                            if (formattedDate !== currentDate) {
-                                const dateSeparator = document.createElement('div');
-                                dateSeparator.className = 'date-separator';
-                                dateSeparator.textContent = formattedDate;
-                                messagesArea.appendChild(dateSeparator);
-                                currentDate = formattedDate;
-                            }
-
-                            // Format time
-                            const timeString = messageDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-                            // Create message element
-                            const messageRow = document.createElement('div');
-                            messageRow.className = `message-row ${message.is_user ? 'user-message' : 'ai-message'}`;
-
-                            if (message.is_user) {
-                                // User message
-                                let messageContent = message.content.replace(/\n/g, '<br>');
-
-                                // Add file attachment if present
-                                if (message.file_url) {
-                                    const fileName = message.file_url.split('/').pop();
-                                    messageContent += `<div class="file-attachment">
-                                                      <i class="fas fa-file-alt"></i> ${fileName}
-                                                  </div>`;
-                                }
-
-                                messageRow.innerHTML = `
-                                    <div class="message-bubble user-bubble">
-                                        <div class="message-content">${messageContent}</div>
-                                        <div class="message-footer">
-                                            <div class="message-time">${timeString}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            } else {
-                                // AI message
-                                const parsedMessage = marked.parse(message.content);
-
-                                messageRow.innerHTML = `
-                                    <div class="message-bubble ai-bubble">
-                                        <div class="ai-profile">
-                                            <img src="/static/img/ai-avatar.png" alt="AI">
-                                            Health Assistant
-                                        </div>
-                                        <div class="message-content">${parsedMessage}</div>
-                                        <div class="message-footer">
-                                            <div class="message-time">${timeString}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-
-                            messagesArea.appendChild(messageRow);
-                        });
-
-                        // Scroll to bottom after loading history
-                        messagesArea.scrollTop = messagesArea.scrollHeight;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading chat history:', error);
-                });
-        }
-
-        // Handle reset form submission
-        const resetForm = document.getElementById('reset-form');
-        if (resetForm) {
-            resetForm.addEventListener('submit', function (event) {
-                if (!confirm('Are you sure you want to start a new conversation? This will clear the current chat.')) {
-                    event.preventDefault();
-                }
-            });
-        }
-
-        // Handle pressing Enter to send message
-        messageInput.addEventListener('keydown', function (event) {
+        // Handle Enter key
+        messageInput.addEventListener('keypress', function (event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                if (messageInput.value.trim() !== '' || fileInput.files.length > 0) {
-                    chatForm.dispatchEvent(new Event('submit'));
-                }
+                chatForm.dispatchEvent(new Event('submit'));
             }
         });
 
-        // Initialize - load chat history if available
+        // Load chat history
+        function loadChatHistory() {
+            fetch('/api/chat/', {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const messagesArea = document.getElementById('chat-messages');
+                // Keep typing indicator
+                const typingIndicator = document.getElementById('typing-indicator');
+                messagesArea.innerHTML = '';
+                messagesArea.appendChild(typingIndicator);
+
+                if (data.messages && Array.isArray(data.messages)) {
+                    data.messages.forEach(msg => {
+                        const messageRow = document.createElement('div');
+                        messageRow.className = `message-row ${msg.is_ai ? 'ai-message' : 'user-message'}`;
+
+                        // Format message content based on type
+                        let formattedMessage = msg.is_ai ? marked.parse(msg.message) : msg.message;
+                        
+                        // Handle file messages
+                        if (msg.file_info) {
+                            formattedMessage += `<p><i class="fas fa-file"></i> ${msg.file_info}</p>`;
+                        }
+
+                        const time = new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        });
+
+                        messageRow.innerHTML = `
+                            <div class="message-bubble ${msg.is_ai ? 'ai-bubble' : 'user-bubble'}">
+                                <div class="message-content">${formattedMessage}</div>
+                                <div class="message-footer">
+                                    <div class="message-time">${time}</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Insert before typing indicator
+                        messagesArea.insertBefore(messageRow, typingIndicator);
+                    });
+                }
+
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error loading chat history:', error);
+                // Show error message to user
+                const messagesArea = document.getElementById('chat-messages');
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'message-row ai-message';
+                errorMessage.innerHTML = `
+                    <div class="message-bubble ai-bubble">
+                        <div class="message-content">Failed to load chat history. Please refresh the page.</div>
+                    </div>
+                `;
+                messagesArea.insertBefore(errorMessage, typingIndicator);
+            });
+        }
+
+        // Load chat history when page loads
         loadChatHistory();
+
+        // Reload chat history after reset
+        document.getElementById('reset-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/api/chat/reset/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    loadChatHistory(); // Reload messages after reset
+                }
+            })
+            .catch(error => console.error('Error resetting chat:', error));
+        });
+
+        // Add this to your existing JavaScript
+        function handleStream(response) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            return new Promise((resolve, reject) => {
+                function pushData() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            if (buffer) {
+                                try {
+                                    const data = JSON.parse(buffer);
+                                    handleStreamMessage(data);
+                                } catch (e) {
+                                    console.error('Error parsing JSON:', e);
+                                }
+                            }
+                            resolve();
+                            return;
+                        }
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    handleStreamMessage(data);
+                                } catch (e) {
+                                    console.error('Error parsing JSON:', e);
+                                }
+                            }
+                        }
+
+                        pushData();
+                    });
+                }
+
+                pushData();
+            });
+        }
+
+        function handleStreamMessage(data) {
+            if (data.required_info) {
+                // Handle required information request
+                showRequiredInfoPrompt(data.required_info);
+            } else if (data.text) {
+                // Update the current message with new text
+                updateStreamingMessage(data.text);
+            }
+        }
+
+        let currentMessageElement = null;
+
+        function updateStreamingMessage(text) {
+            if (!currentMessageElement) {
+                currentMessageElement = createNewMessageElement();
+                messagesArea.appendChild(currentMessageElement);
+            }
+
+            const contentElement = currentMessageElement.querySelector('.message-content');
+            contentElement.innerHTML = marked.parse(text);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function createNewMessageElement() {
+            const messageRow = document.createElement('div');
+            messageRow.className = 'message-row ai-message';
+            messageRow.innerHTML = `
+                <div class="message-bubble ai-bubble">
+                    <div class="message-content"></div>
+                    <div class="message-footer">
+                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `;
+            return messageRow;
+        }
     });
 </script>
 {% endblock extra_js %}
