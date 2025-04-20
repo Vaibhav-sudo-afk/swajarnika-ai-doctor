@@ -808,7 +808,7 @@
                 }
 
                 if (file.size > maxSize) {
-                    alert('File size must be less than 10MB.');
+                    alert('File size must be less than 50MB.');
                     clearFileInput();
                     return;
                 }
@@ -986,109 +986,109 @@
         });
 
         // Function to load chat history
-        function loadChatHistory() {
-            fetch(`/api/chat/history/?patient_id=${patientId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.messages && data.messages.length > 0) {
-                        // Hide empty state
-                        if (emptyChat) {
-                            emptyChat.style.display = 'none';
-                        }
+        //     function loadChatHistory() {
+        //         fetch(`/api/chat/history/?patient_id=${patientId}`)
+        //             .then(response => response.json())
+        //             .then(data => {
+        //                 if (data.messages && data.messages.length > 0) {
+        //                     // Hide empty state
+        //                     if (emptyChat) {
+        //                         emptyChat.style.display = 'none';
+        //                     }
 
-                        let currentDate = '';
+        //                     let currentDate = '';
 
-                        data.messages.forEach(message => {
-                            const messageDate = new Date(message.timestamp);
-                            const formattedDate = formatDate(messageDate);
+        //                     data.messages.forEach(message => {
+        //                         const messageDate = new Date(message.timestamp);
+        //                         const formattedDate = formatDate(messageDate);
 
-                            // Add date separator if date changes
-                            if (formattedDate !== currentDate) {
-                                const dateSeparator = document.createElement('div');
-                                dateSeparator.className = 'date-separator';
-                                dateSeparator.textContent = formattedDate;
-                                messagesArea.appendChild(dateSeparator);
-                                currentDate = formattedDate;
-                            }
+        //                         // Add date separator if date changes
+        //                         if (formattedDate !== currentDate) {
+        //                             const dateSeparator = document.createElement('div');
+        //                             dateSeparator.className = 'date-separator';
+        //                             dateSeparator.textContent = formattedDate;
+        //                             messagesArea.appendChild(dateSeparator);
+        //                             currentDate = formattedDate;
+        //                         }
 
-                            // Format time
-                            const timeString = messageDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        //                         // Format time
+        //                         const timeString = messageDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
-                            // Create message element
-                            const messageRow = document.createElement('div');
-                            messageRow.className = `message-row ${message.is_user ? 'user-message' : 'ai-message'}`;
+        //                         // Create message element
+        //                         const messageRow = document.createElement('div');
+        //                         messageRow.className = `message-row ${message.is_user ? 'user-message' : 'ai-message'}`;
 
-                            if (message.is_user) {
-                                // User message
-                                let messageContent = message.content.replace(/\n/g, '<br>');
+        //                         if (message.is_user) {
+        //                             // User message
+        //                             let messageContent = message.content.replace(/\n/g, '<br>');
 
-                                // Add file attachment if present
-                                if (message.file_url) {
-                                    const fileName = message.file_url.split('/').pop();
-                                    messageContent += `<div class="file-attachment">
-                                                      <i class="fas fa-file-alt"></i> ${fileName}
-                                                  </div>`;
-                                }
+        //                             // Add file attachment if present
+        //                             if (message.file_url) {
+        //                                 const fileName = message.file_url.split('/').pop();
+        //                                 messageContent += `<div class="file-attachment">
+        //                                                   <i class="fas fa-file-alt"></i> ${fileName}
+        //                                               </div>`;
+        //                             }
 
-                                messageRow.innerHTML = `
-                                    <div class="message-bubble user-bubble">
-                                        <div class="message-content">${messageContent}</div>
-                                        <div class="message-footer">
-                                            <div class="message-time">${timeString}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            } else {
-                                // AI message
-                                const parsedMessage = marked.parse(message.content);
+        //                             messageRow.innerHTML = `
+        //                                 <div class="message-bubble user-bubble">
+        //                                     <div class="message-content">${messageContent}</div>
+        //                                     <div class="message-footer">
+        //                                         <div class="message-time">${timeString}</div>
+        //                                     </div>
+        //                                 </div>
+        //                             `;
+        //                         } else {
+        //                             // AI message
+        //                             const parsedMessage = marked.parse(message.content);
 
-                                messageRow.innerHTML = `
-                                    <div class="message-bubble ai-bubble">
-                                        <div class="ai-profile">
-                                            DR. SWA AI
-                                        </div>
-                                        <div class="message-content">${parsedMessage}</div>
-                                        <div class="message-footer">
-                                            <div class="message-time">${timeString}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            }
+        //                             messageRow.innerHTML = `
+        //                                 <div class="message-bubble ai-bubble">
+        //                                     <div class="ai-profile">
+        //                                         DR. SWA AI
+        //                                     </div>
+        //                                     <div class="message-content">${parsedMessage}</div>
+        //                                     <div class="message-footer">
+        //                                         <div class="message-time">${timeString}</div>
+        //                                     </div>
+        //                                 </div>
+        //                             `;
+        //                         }
 
-                            messagesArea.appendChild(messageRow);
-                        });
+        //                         messagesArea.appendChild(messageRow);
+        //                     });
 
-                        // Scroll to bottom after loading history
-                        messagesArea.scrollTop = messagesArea.scrollHeight;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading chat history:', error);
-                });
-        }
+        //                     // Scroll to bottom after loading history
+        //                     messagesArea.scrollTop = messagesArea.scrollHeight;
+        //                 }
+        //             })
+        //             .catch(error => {
+        //                 console.error('Error loading chat history:', error);
+        //             });
+        //     }
 
-        // Handle reset form submission
-        const resetForm = document.getElementById('reset-form');
-        if (resetForm) {
-            resetForm.addEventListener('submit', function (event) {
-                if (!confirm('Are you sure you want to start a new conversation? This will clear the current chat.')) {
-                    event.preventDefault();
-                }
-            });
-        }
+        //     // Handle reset form submission
+        //     const resetForm = document.getElementById('reset-form');
+        //     if (resetForm) {
+        //         resetForm.addEventListener('submit', function (event) {
+        //             if (!confirm('Are you sure you want to start a new conversation? This will clear the current chat.')) {
+        //                 event.preventDefault();
+        //             }
+        //         });
+        //     }
 
-        // Handle pressing Enter to send message
-        messageInput.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                if (messageInput.value.trim() !== '' || fileInput.files.length > 0) {
-                    chatForm.dispatchEvent(new Event('submit'));
-                }
-            }
-        });
+        //     // Handle pressing Enter to send message
+        //     messageInput.addEventListener('keydown', function (event) {
+        //         if (event.key === 'Enter' && !event.shiftKey) {
+        //             event.preventDefault();
+        //             if (messageInput.value.trim() !== '' || fileInput.files.length > 0) {
+        //                 chatForm.dispatchEvent(new Event('submit'));
+        //             }
+        //         }
+        //     });
 
-        // Initialize - load chat history if available
-        loadChatHistory();
+        //     // Initialize - load chat history if available
+        //     loadChatHistory();
     });
 </script>
 {% endblock extra_js %}

@@ -38,6 +38,8 @@ AKASH_API_ENDPOINT = "https://chatapi.akash.network/api/v1"
 REQUEST_TIMEOUT = 20
 
 
+
+
 def make_random_password(length=8):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
@@ -193,6 +195,7 @@ class ChatAPIView(APIView):
 
             # Handle file if present
             file_content = None
+       
             if uploaded_file:
                 file_content = self.process_uploaded_file(uploaded_file, patient)
 
@@ -254,39 +257,37 @@ class ChatAPIView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def process_uploaded_file(self, file, patient):
+        """Process file upload during chat"""
         visit = Visit.objects.filter(patient=patient).order_by('-date_of_visit').first()
         if not visit:
             visit = Visit.objects.create(
                 patient=patient,
                 doctor=patient.doctor,
                 date_of_visit=timezone.now().date(),
-                diagnosis="File Upload via Chat",
-                treatment_plan="Document Review"
+                diagnosis="Document Review via Chat",
+                treatment_plan="AI Assistant Analysis"
             )
-
+            
         file_upload = FileUpload.objects.create(
             visit=visit,
             file_path=file,
-            description=f"Uploaded during chat: {file.name}"
+            description="Uploaded during AI chat consultation"
         )
-
-        # Extract text from file
-        return get_file_contents([file_upload])
-
+        
+        return process_file_for_chat(file_upload)
+        
     def get_historical_context(self, patient):
-        # Get previous interactions
-        previous_prompts = AIPrompt.objects.filter(
+        """Get recent chat history"""
+        recent_messages = AIChatMessage.objects.filter(
             patient=patient
-        ).order_by('-created_at')[:5]
-
+        ).order_by('-created_at')[:10]
+        
         return {
             'previous_interactions': [
                 {
-                    'prompt': p.prompt_text,
-                    'response': p.response_text,
-                    'required_info': p.required_info,
-                    'language': p.language_detected
-                } for p in previous_prompts
+                    'prompt': msg.message,
+                    'response': msg.message if msg.is_ai else None
+                } for msg in recent_messages if msg.message
             ]
         }
 

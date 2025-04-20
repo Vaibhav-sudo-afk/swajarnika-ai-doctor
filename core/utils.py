@@ -877,3 +877,154 @@ def detect_language_preference(historical_context, specified_language=None):
     # Analyze language patterns from previous interactions
     # Add your language detection logic here
     return "English"  # placeholder return
+
+
+def process_file_for_chat(file_upload):
+    """Process uploaded file content for chat context"""
+    try:
+        file_info = {
+            'content': '',
+            'analysis': '',
+            'file_type': file_upload.file_path.name.split('.')[-1],
+            'name': file_upload.file_path.name,
+            'size': file_upload.file_path.size
+        }
+        
+        # Get file contents using existing function
+        file_contents = get_file_contents([file_upload])
+        if file_contents:
+            first_file = list(file_contents.values())[0]
+            file_info['content'] = first_file.get('content', '')
+            file_info['analysis'] = first_file.get('analysis', '')
+            
+        return file_info
+    except Exception as e:
+        print(f"Error processing file: {str(e)}")
+        return None
+
+
+def analyze_chat_for_visit(message, response):
+    """Analyze chat context to determine if visit creation is needed"""
+    visit_keywords = [
+        "create a visit",
+        "schedule appointment",
+        "new consultation",
+        "medical review needed",
+        "recommend seeing doctor"
+    ]
+    
+    combined_text = f"{message}\n{response}".lower()
+    should_create = any(keyword in combined_text for keyword in visit_keywords)
+    
+    if should_create:
+        visit_data = {
+            'diagnosis': extract_medical_info(response, "Diagnosis"),
+            'treatment_plan': extract_medical_info(response, "Treatment Plan"),
+            'medications': extract_medications(response),
+            'tests': extract_tests(response)
+        }
+        return visit_data
+    return None
+
+
+def extract_medical_info(text, section_name):
+    """Extract specific section from AI response"""
+    try:
+        if f"{section_name}:" in text:
+            info = text.split(f"{section_name}:")[-1].split("\n")[0].strip()
+            return info
+    except:
+        pass
+    return ""
+
+
+def extract_medications(text):
+    """Extract medication information from response"""
+    medications = []
+    try:
+        if "Medications:" in text:
+            med_section = text.split("Medications:")[-1].split("\n")
+            for line in med_section:
+                if line.strip().startswith("-"):
+                    med_info = line.strip("- ").split(":")
+                    if len(med_info) >= 2:
+                        medications.append({
+                            'name': med_info[0].strip(),
+                            'instructions': med_info[1].strip(),
+                            'missed_dose': "Take next scheduled dose",
+                            'reason': "Prescribed via AI consultation"
+                        })
+    except:
+        pass
+    return medications
+
+
+def extract_tests(text):
+    """Extract test information from response"""
+    tests = []
+    try:
+        if "Tests:" in text:
+            test_section = text.split("Tests:")[-1].split("\n")
+            for line in test_section:
+                if line.strip().startswith("-"):
+                    test_name = line.strip("- ")
+                    if test_name:
+                        tests.append({
+                            'name': test_name,
+                            'reason': "Recommended via AI consultation",
+                            'region': ""
+                        })
+    except:
+        pass
+    return tests
+
+
+def detect_mistaken_upload(message: str, ai_response: str) -> bool:
+    """Detect if AI response indicates file was uploaded by mistake"""
+    # Convert to lowercase for easier matching
+    response_lower = ai_response.lower()
+    message_lower = message.lower()
+    
+    # Keywords indicating healthy/fine status
+    health_indicators = [
+        "you are perfectly fine",
+        "you are healthy",
+        "you're completely healthy",
+        "no health issues",
+        "everything looks normal"
+    ]
+    
+    # Keywords indicating mistaken upload
+    mistake_indicators = [
+        "uploaded by mistake",
+        "accidental upload",
+        "mistakenly uploaded",
+        "didn't mean to upload",
+        "upload was not necessary"
+    ]
+    
+    is_healthy = any(indicator in response_lower for indicator in health_indicators)
+    is_mistake = any(indicator in response_lower or indicator in message_lower 
+                    for indicator in mistake_indicators)
+    
+    return is_healthy and is_mistake
+
+
+def safely_delete_file(file_upload) -> Tuple[bool, str]:
+    """Safely delete a file upload and return status"""
+    try:
+        # Get file path
+        file_path = os.path.join(settings.MEDIA_ROOT, 
+                                file_upload.file_path.name.lstrip('/'))
+        
+        # Delete physical file if it exists
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Update database record
+        file_name = file_upload.file_path.name
+        file_upload.delete()
+        
+        return True, f"Successfully deleted file: {file_name}"
+    except Exception as e:
+        return False, f"Error deleting file: {str(e)}"

@@ -21,6 +21,9 @@ from typing import List, Dict
 import json
 from . import models
 from django.contrib import messages
+from django.db.models.functions import TruncDate
+from django.db.models import Count
+
 # First define the decorators
 
 
@@ -642,3 +645,27 @@ def patient_ai_chat(request):
     Make sure the template 'core/patient/ai_chat.html' exists.
     """
     return render(request, 'core/patient/ai_chat.html')
+
+
+@doctor_required
+def doctor_patient_chats(request, patient_id):
+    patient = get_object_or_404(Patient, id=patient_id, doctor=request.user.doctor)
+    
+    # Get all chat messages and group by date
+    chat_messages = AIChatMessage.objects.filter(patient=patient).order_by('-created_at')
+    
+    # Group messages by date
+    messages_by_date = {}
+    for msg in chat_messages:
+        date = msg.created_at.date()
+        if date not in messages_by_date:
+            messages_by_date[date] = []
+        messages_by_date[date].append(msg)
+    
+    context = {
+        'patient': patient,
+        'messages_by_date': messages_by_date,
+        'total_messages': chat_messages.count(),
+    }
+    
+    return render(request, 'core/doctor/patient_chats.html', context)

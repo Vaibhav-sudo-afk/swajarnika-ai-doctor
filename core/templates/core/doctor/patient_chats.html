@@ -1,0 +1,200 @@
+{% extends 'core/base.html' %}
+{% load custom_filters %}
+
+{% block extra_css %}
+<style>
+    .chat-history-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-date-group {
+        background: white;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .date-header {
+        background: linear-gradient(135deg, #4b6cb7, #182848);
+        color: white;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .chat-message {
+        padding: 1.5rem;
+        border-bottom: 1px solid #edf2f7;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .chat-message:last-child {
+        border-bottom: none;
+    }
+
+    .message-time {
+        min-width: 100px;
+        color: #718096;
+        font-size: 0.9rem;
+    }
+
+    .message-content {
+        flex: 1;
+        background: #f8f9fb;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #3498db;
+    }
+
+    .user-message .message-content {
+        background: #1b1c1d;
+        border-left-color: #47de39;
+    }
+
+    .ai-message .message-content {
+        background: #024571;
+        border-left-color: #b6e3e1;
+    }
+
+    .sender-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-badge {
+        background: #ebf8ff;
+        color: #2b6cb0;
+    }
+
+    .ai-badge {
+        background: #e6fffa;
+        color: #2c7a7b;
+    }
+
+    .file-attachment {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .message-navigation {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .date-nav {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .date-nav:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .no-messages {
+        text-align: center;
+        padding: 3rem;
+        color: #718096;
+    }
+
+    @media (max-width: 768px) {
+        .chat-message {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .message-time {
+            min-width: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-history-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="text-white mb-0">
+                <i class="fas fa-comments me-2"></i>Chat History - {{ patient.name }}
+            </h2>
+            <a href="{% url 'doctor_patient_detail' patient.id %}" class="btn btn-light">
+                <i class="fas fa-arrow-left me-2"></i>Back to Patient Details
+            </a>
+        </div>
+    </div>
+
+    {% if messages_by_date %}
+        {% for date, messages in messages_by_date.items %}
+        <div class="chat-date-group">
+            <div class="date-header">
+                <span><i class="far fa-calendar-alt me-2"></i>{{ date }}</span>
+                <span>{{ messages|length }} messages</span>
+            </div>
+            
+            {% for message in messages %}
+            <div class="chat-message {% if message.is_ai %}ai-message{% else %}user-message{% endif %}">
+                <div class="message-time">
+                    {{ message.created_at|time:"g:i A" }}
+                </div>
+                <div class="message-content">
+                    <div class="sender-badge {% if message.is_ai %}ai-badge{% else %}user-badge{% endif %}">
+                        {% if message.is_ai %}
+                            <i class="fas fa-robot me-1"></i>DR. SWA AI
+                        {% else %}
+                            <i class="fas fa-user me-1"></i>{{ patient.name }}
+                        {% endif %}
+                    </div>
+                    {{ message.message|linebreaks }}
+                    
+                    {% if message.file_path %}
+                    <div class="file-attachment">
+                        <i class="fas fa-file-alt"></i>
+                        <a href="{{ message.file_path.url }}" target="_blank">View Attached File</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="chat-date-group">
+            <div class="no-messages">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <h3>No chat history available</h3>
+                <p>This patient hasn't had any conversations with DR. SWA AI yet.</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
