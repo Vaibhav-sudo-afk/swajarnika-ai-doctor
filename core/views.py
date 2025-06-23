@@ -190,6 +190,19 @@ class ChatAPIView(APIView):
         session_id = request.data.get('session_id')
         patient = request.user.patient
         action = request.data.get('action')
+        confirm_changes = request.data.get('confirm_changes')
+        edit_changes = request.data.get('edit_changes')
+        import json
+        if isinstance(confirm_changes, str):
+            try:
+                confirm_changes = json.loads(confirm_changes)
+            except Exception:
+                confirm_changes = None
+        if isinstance(edit_changes, str):
+            try:
+                edit_changes = json.loads(edit_changes)
+            except Exception:
+                edit_changes = None
 
         try:
             # Handle session management actions
@@ -294,18 +307,56 @@ class ChatAPIView(APIView):
                 AIPrompt.objects.create(
                     patient=patient,
                     visit=Visit.objects.filter(patient=patient).last(),
+                    session=session,
                     prompt_text=message,
                     response_text=ai_reply,
                     context_used=get_detailed_patient_data(patient)[:500]
                 )
 
-                # Try to update patient info if message contains info
-                self.try_update_patient_info(message, patient)
-
+                # Detect patient info changes
+                detected_changes = self.try_update_patient_info(message, patient)
+                if detected_changes and not action:
+                    # Ask user for confirmation before updating
+                    return Response({
+                        'message': ai_reply,
+                        'detected_changes': detected_changes,
+                        'session_id': session.id,
+                        'file_processed': bool(uploaded_file),
+                        'require_confirmation': True
+                    }, status=status.HTTP_200_OK)
+                # If user confirms changes
+                if action == 'apply_changes' and confirm_changes:
+                    with transaction.atomic():
+                        for field, value in confirm_changes.items():
+                            if field == 'date_of_birth':
+                                from datetime import date
+                                value = date.fromisoformat(value)
+                            setattr(patient, field, value)
+                        patient.save()
+                    # Update all AIPrompt context_used for this patient (across all sessions)
+                    prompts = AIPrompt.objects.filter(patient=patient)
+                    for prompt in prompts:
+                        prompt.context_used = get_detailed_patient_data(patient)[:500]
+                        prompt.save()
+                # If user edits changes
+                if action == 'edit_changes' and edit_changes:
+                    with transaction.atomic():
+                        for field, value in edit_changes.items():
+                            if field == 'date_of_birth':
+                                from datetime import date
+                                value = date.fromisoformat(value)
+                            setattr(patient, field, value)
+                        patient.save()
+                    # Update all AIPrompt context_used for this patient (across all sessions)
+                    prompts = AIPrompt.objects.filter(patient=patient)
+                    for prompt in prompts:
+                        prompt.context_used = get_detailed_patient_data(patient)[:500]
+                        prompt.save()
+                # If user discards, do nothing
                 return Response({
                     'message': ai_reply,
-                    'file_processed': bool(uploaded_file),
-                    'session_id': session.id
+                    'session_id': session.id,
+                    'file_processed': bool(uploaded_file)
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
@@ -448,35 +499,27 @@ class ChatAPIView(APIView):
 
     def try_update_patient_info(self, message, patient):
         # Simple regex-based extraction for name, age, gender, phone, address
-        updated = False
+        changes = {}
         name_match = re.search(r"my name is ([a-zA-Z ]+)", message, re.IGNORECASE)
         age_match = re.search(r"i am (\d{1,3}) ?(years old|yrs old|y/o)?", message, re.IGNORECASE)
         gender_match = re.search(r"i am (male|female|other)", message, re.IGNORECASE)
         phone_match = re.search(r"my phone( number)? is (\d{10,15})", message, re.IGNORECASE)
         address_match = re.search(r"my address is ([^\.\n]+)", message, re.IGNORECASE)
-        with transaction.atomic():
-            if name_match:
-                patient.name = name_match.group(1).strip()
-                updated = True
-            if age_match:
-                # Calculate date_of_birth from age
-                from datetime import date, timedelta
-                age = int(age_match.group(1))
-                today = date.today()
-                dob = date(today.year - age, today.month, today.day)
-                patient.date_of_birth = dob
-                updated = True
-            if gender_match:
-                patient.gender = gender_match.group(1).capitalize()
-                updated = True
-            if phone_match:
-                patient.phone = phone_match.group(2)
-                updated = True
-            if address_match:
-                patient.address = address_match.group(1).strip()
-                updated = True
-            if updated:
-                patient.save()
+        from datetime import date
+        if name_match:
+            changes['name'] = name_match.group(1).strip()
+        if age_match:
+            age = int(age_match.group(1))
+            today = date.today()
+            dob = date(today.year - age, today.month, today.day)
+            changes['date_of_birth'] = dob.isoformat()
+        if gender_match:
+            changes['gender'] = gender_match.group(1).capitalize()
+        if phone_match:
+            changes['phone'] = phone_match.group(2)
+        if address_match:
+            changes['address'] = address_match.group(1).strip()
+        return changes
 
 
 class LogoutView(APIView):

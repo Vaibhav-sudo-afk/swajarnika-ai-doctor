@@ -231,7 +231,8 @@ def patient_dashboard(request):
     context = {
         'visits': visits,
         'recent_medications': medications,
-        'recent_tests': tests
+        'recent_tests': tests,
+        'patient': request.user.patient
     }
     return render(request, 'core/patient/dashboard.html', context)
 

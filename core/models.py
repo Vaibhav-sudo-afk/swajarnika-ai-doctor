@@ -92,6 +92,7 @@ class AIPrompt(models.Model):
     
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     visit = models.ForeignKey(Visit, on_delete=models.CASCADE, null=True, blank=True)
+    session = models.ForeignKey('ChatSession', on_delete=models.CASCADE, null=True, blank=True)
     prompt_text = models.TextField(default='')
     response_text = models.TextField(default='')
     context_used = models.TextField(null=True, blank=True)
