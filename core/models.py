@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 class User(AbstractUser):
     is_doctor = models.BooleanField(default=False)
@@ -103,8 +104,43 @@ class AIPrompt(models.Model):
     def __str__(self):
         return f"AI Prompt for {self.patient.name} at {self.created_at}"
 
+class ChatSession(models.Model):
+    CATEGORY_CHOICES = [
+        ('general', 'General'),
+        ('symptoms', 'Symptoms'),
+        ('medication', 'Medication'),
+        ('test_results', 'Test Results'),
+        ('follow_up', 'Follow Up'),
+        ('emergency', 'Emergency'),
+    ]
+
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='chat_sessions')
+    title = models.CharField(max_length=255, blank=True, null=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
+    tags = models.CharField(max_length=500, blank=True, help_text="Comma-separated tags")
+    started_at = models.DateTimeField(auto_now_add=True)
+    has_unread = models.BooleanField(default=False)
+    last_read_by_patient = models.DateTimeField(null=True, blank=True)
+    last_message_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title or f'Chat {self.id}'} - {self.patient.name}"
+
+    def mark_as_read(self):
+        self.has_unread = False
+        self.last_read_by_patient = timezone.now()
+        self.save()
+
+    def mark_as_unread(self):
+        self.has_unread = True
+        self.save()
+
+    def get_tags_list(self):
+        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+
 class AIChatMessage(models.Model):
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE)
+    session = models.ForeignKey('ChatSession', on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
     message = models.TextField()
     is_ai = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -141,60 +141,109 @@
 {% endblock %}
 
 {% block content %}
-<div class="chat-history-container">
-    <div class="page-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2 class="text-white mb-0">
-                <i class="fas fa-comments me-2"></i>Chat History - {{ patient.name }}
-            </h2>
-            <a href="{% url 'doctor_patient_detail' patient.id %}" class="btn btn-light">
-                <i class="fas fa-arrow-left me-2"></i>Back to Patient Details
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-comments me-2"></i>Chat Sessions - {{ patient.name }}
+        </h2>
+        <div>
+            <a href="{% url 'doctor_patient_detail' patient.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Patient
             </a>
         </div>
     </div>
 
-    {% if messages_by_date %}
-        {% for date, messages in messages_by_date.items %}
-        <div class="chat-date-group">
-            <div class="date-header">
-                <span><i class="far fa-calendar-alt me-2"></i>{{ date }}</span>
-                <span>{{ messages|length }} messages</span>
-            </div>
-            
-            {% for message in messages %}
-            <div class="chat-message {% if message.is_ai %}ai-message{% else %}user-message{% endif %}">
-                <div class="message-time">
-                    {{ message.created_at|time:"g:i A" }}
+    <div class="row">
+        <!-- Chat Sessions List -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Chat History</h5>
                 </div>
-                <div class="message-content">
-                    <div class="sender-badge {% if message.is_ai %}ai-badge{% else %}user-badge{% endif %}">
-                        {% if message.is_ai %}
-                            <i class="fas fa-robot me-1"></i>DR. SWA AI
-                        {% else %}
-                            <i class="fas fa-user me-1"></i>{{ patient.name }}
-                        {% endif %}
+                <div class="list-group list-group-flush">
+                    {% for session in chat_sessions %}
+                    <a href="#" class="list-group-item list-group-item-action {% if session.id == current_session.id %}active{% endif %}"
+                        onclick="loadSession('{{ session.id }}')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Session #{{ session.id }}</h6>
+                            <small>{{ session.started_at|date:"M d, Y" }}</small>
+                        </div>
+                        <p class="mb-1 text-truncate">{{ session.last_message|default:"No messages" }}</p>
+                        <small>{{ session.message_count }} messages</small>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted">
+                        No chat sessions found
                     </div>
-                    {{ message.message|linebreaks }}
-                    
-                    {% if message.file_path %}
-                    <div class="file-attachment">
-                        <i class="fas fa-file-alt"></i>
-                        <a href="{{ message.file_path.url }}" target="_blank">View Attached File</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comment-dots me-2"></i>
+                        {% if current_session %}
+                            Chat Messages - {{ current_session.started_at|date:"M d, Y H:i" }}
+                        {% else %}
+                            Select a Chat Session
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body chat-messages" style="max-height: 500px; overflow-y: auto;">
+                    {% if current_session %}
+                        {% for message in messages %}
+                        <div class="mb-3 {% if message.is_ai %}ms-3{% else %}me-3 text-end{% endif %}">
+                            <div class="d-inline-block p-3 rounded-3 {% if message.is_ai %}bg-light{% else %}bg-primary text-white{% endif %}"
+                                style="max-width: 80%;">
+                                <div class="mb-2">
+                                    <small class="text-muted">
+                                        {{ message.created_at|date:"H:i" }}
+                                        {% if message.is_ai %}
+                                            <i class="fas fa-robot ms-1"></i>
+                                        {% else %}
+                                            <i class="fas fa-user ms-1"></i>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div style="white-space: pre-wrap;">{{ message.message }}</div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <p>No messages in this session</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-hand-point-left fa-3x mb-3"></i>
+                        <p>Select a chat session from the left to view messages</p>
                     </div>
                     {% endif %}
                 </div>
             </div>
-            {% endfor %}
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="chat-date-group">
-            <div class="no-messages">
-                <i class="fas fa-inbox fa-3x mb-3"></i>
-                <h3>No chat history available</h3>
-                <p>This patient hasn't had any conversations with DR. SWA AI yet.</p>
-            </div>
-        </div>
-    {% endif %}
+    </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadSession(sessionId) {
+    window.location.href = `?session_id=${sessionId}`;
+}
+
+// Scroll to bottom of messages on load
+document.addEventListener('DOMContentLoaded', function() {
+    const chatMessages = document.querySelector('.chat-messages');
+    if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+});
+</script>
 {% endblock %}

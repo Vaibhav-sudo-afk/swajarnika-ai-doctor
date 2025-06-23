@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 import json
 import os
 from django.conf import settings
-from .models import AIChatMessage, FileUpload, Visit, Patient, Doctor, AIPrompt, Medication
+from .models import AIChatMessage, FileUpload, Visit, Patient, Doctor, AIPrompt, Medication, ChatSession
 from .utils import format_chat_messages, get_detailed_patient_data, get_file_contents
 import tempfile
 import uuid
@@ -27,6 +27,9 @@ from asgiref.sync import async_to_sync
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from .decorators import doctor_required, patient_required
+from django.db import transaction
+import re
+from django.db.models import Q, Count, Max
 
 User = get_user_model()
 
@@ -179,28 +182,79 @@ class PatientProfileView(APIView):
 
 
 class ChatAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         message = request.data.get('message')
         uploaded_file = request.FILES.get('file')
-        
+        session_id = request.data.get('session_id')
+        patient = request.user.patient
+        action = request.data.get('action')
+
         try:
-            patient = request.user.patient
-            
+            # Handle session management actions
+            if action:
+                if not session_id:
+                    return Response({'error': 'Session ID required'}, status=400)
+                session = ChatSession.objects.get(id=session_id, patient=patient)
+                
+                if action == 'rename':
+                    new_title = request.data.get('title')
+                    if not new_title:
+                        return Response({'error': 'Title required'}, status=400)
+                    session.title = new_title
+                    session.save()
+                    return Response({'message': 'Session renamed successfully'})
+                
+                elif action == 'update_category':
+                    new_category = request.data.get('category')
+                    if not new_category:
+                        return Response({'error': 'Category required'}, status=400)
+                    session.category = new_category
+                    session.save()
+                    return Response({'message': 'Category updated successfully'})
+                
+                elif action == 'update_tags':
+                    new_tags = request.data.get('tags')
+                    if new_tags is None:
+                        return Response({'error': 'Tags required'}, status=400)
+                    session.tags = new_tags
+                    session.save()
+                    return Response({'message': 'Tags updated successfully'})
+                
+                elif action == 'mark_read':
+                    session.mark_as_read()
+                    return Response({'message': 'Session marked as read'})
+                
+                return Response({'error': 'Invalid action'}, status=400)
+
+            # Get or create chat session
+            if session_id:
+                session = ChatSession.objects.get(id=session_id, patient=patient)
+            else:
+                session = ChatSession.objects.create(
+                    patient=patient,
+                    title=f"Chat {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+                )
+
             # Save user message
             user_message = AIChatMessage.objects.create(
                 patient=patient,
+                session=session,
                 message=message,
                 is_ai=False
             )
 
+            # Mark session as unread for new messages
+            session.mark_as_unread()
+
             # Handle file if present
             file_content = None
-       
             if uploaded_file:
                 file_content = self.process_uploaded_file(uploaded_file, patient)
 
-            # Get historical context
-            historical_context = self.get_historical_context(patient)
+            # Get historical context for this session
+            historical_context = self.get_historical_context(session)
 
             # Format messages
             messages = format_chat_messages(
@@ -231,6 +285,7 @@ class ChatAPIView(APIView):
                 # Save AI response
                 ai_message = AIChatMessage.objects.create(
                     patient=patient,
+                    session=session,
                     message=ai_reply,
                     is_ai=True
                 )
@@ -244,9 +299,13 @@ class ChatAPIView(APIView):
                     context_used=get_detailed_patient_data(patient)[:500]
                 )
 
+                # Try to update patient info if message contains info
+                self.try_update_patient_info(message, patient)
+
                 return Response({
                     'message': ai_reply,
-                    'file_processed': bool(uploaded_file)
+                    'file_processed': bool(uploaded_file),
+                    'session_id': session.id
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
@@ -256,8 +315,80 @@ class ChatAPIView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def get(self, request):
+        """
+        List all chat sessions for the patient, or messages for a session if session_id is provided.
+        """
+        patient = request.user.patient
+        session_id = request.query_params.get('session_id')
+        search_query = request.query_params.get('search')
+        category_filter = request.query_params.get('category')
+        tags_filter = request.query_params.get('tags')
+
+        if session_id:
+            # Return messages for this session
+            session = ChatSession.objects.get(id=session_id, patient=patient)
+            messages = AIChatMessage.objects.filter(session=session).order_by('created_at')
+            
+            # Mark session as read when viewing messages
+            session.mark_as_read()
+            
+            return Response({
+                'session_id': session.id,
+                'title': session.title,
+                'category': session.category,
+                'tags': session.tags,
+                'started_at': session.started_at,
+                'messages': [
+                    {
+                        'id': msg.id,
+                        'is_ai': msg.is_ai,
+                        'message': msg.message,
+                        'created_at': msg.created_at
+                    } for msg in messages
+                ]
+            })
+        else:
+            # Build query for sessions
+            sessions = ChatSession.objects.filter(patient=patient)
+            
+            if search_query:
+                sessions = sessions.filter(
+                    Q(title__icontains=search_query) |
+                    Q(messages__message__icontains=search_query)
+                ).distinct()
+            
+            if category_filter:
+                sessions = sessions.filter(category=category_filter)
+            
+            if tags_filter:
+                tags_list = [tag.strip() for tag in tags_filter.split(',')]
+                for tag in tags_list:
+                    sessions = sessions.filter(tags__icontains=tag)
+            
+            sessions = sessions.annotate(
+                message_count=Count('messages'),
+                last_message=Max('messages__message')
+            ).order_by('-last_message_at')
+
+            return Response({
+                'sessions': [
+                    {
+                        'id': s.id,
+                        'title': s.title,
+                        'category': s.category,
+                        'tags': s.get_tags_list(),
+                        'started_at': s.started_at,
+                        'last_message': s.last_message,
+                        'message_count': s.message_count,
+                        'has_unread': s.has_unread,
+                        'last_message_at': s.last_message_at
+                    } for s in sessions
+                ],
+                'categories': ChatSession.CATEGORY_CHOICES
+            })
+
     def process_uploaded_file(self, file, patient):
-        """Process file upload during chat"""
         visit = Visit.objects.filter(patient=patient).order_by('-date_of_visit').first()
         if not visit:
             visit = Visit.objects.create(
@@ -267,29 +398,85 @@ class ChatAPIView(APIView):
                 diagnosis="Document Review via Chat",
                 treatment_plan="AI Assistant Analysis"
             )
-            
         file_upload = FileUpload.objects.create(
             visit=visit,
             file_path=file,
             description="Uploaded during AI chat consultation"
         )
-        
         return process_file_for_chat(file_upload)
+
+    def get_historical_context(self, session):
+        # Get all messages from all sessions for this patient
+        all_messages = AIChatMessage.objects.filter(
+            patient=session.patient
+        ).order_by('created_at')  # Get all messages, ordered by time
         
-    def get_historical_context(self, patient):
-        """Get recent chat history"""
-        recent_messages = AIChatMessage.objects.filter(
-            patient=patient
-        ).order_by('-created_at')[:10]
+        # Group messages by session for better context
+        context = {'previous_interactions': []}
+        current_session_messages = []
+        other_sessions_messages = {}  # Dictionary to group messages by session
         
-        return {
-            'previous_interactions': [
-                {
-                    'prompt': msg.message,
-                    'response': msg.message if msg.is_ai else None
-                } for msg in recent_messages if msg.message
-            ]
-        }
+        for msg in all_messages:
+            message_data = {
+                'prompt': msg.message if not msg.is_ai else '',
+                'response': msg.message if msg.is_ai else '',
+                'session_id': msg.session.id if msg.session else None,
+                'timestamp': msg.created_at.isoformat()
+            }
+            
+            if msg.session and msg.session.id == session.id:
+                current_session_messages.append(message_data)
+            elif msg.session:
+                if msg.session.id not in other_sessions_messages:
+                    other_sessions_messages[msg.session.id] = []
+                other_sessions_messages[msg.session.id].append(message_data)
+        
+        # Add current session context first
+        context['previous_interactions'].extend(current_session_messages)
+        
+        # Add context from other sessions, grouped by session
+        for session_id, messages in other_sessions_messages.items():
+            if messages:
+                session_date = ChatSession.objects.get(id=session_id).started_at.strftime('%Y-%m-%d %H:%M')
+                context['previous_interactions'].append({
+                    'prompt': f'\nContext from chat session {session_id} (started {session_date}):\n',
+                    'response': 'Here are the relevant messages from this session:'
+                })
+                context['previous_interactions'].extend(messages)
+        
+        return context
+
+    def try_update_patient_info(self, message, patient):
+        # Simple regex-based extraction for name, age, gender, phone, address
+        updated = False
+        name_match = re.search(r"my name is ([a-zA-Z ]+)", message, re.IGNORECASE)
+        age_match = re.search(r"i am (\d{1,3}) ?(years old|yrs old|y/o)?", message, re.IGNORECASE)
+        gender_match = re.search(r"i am (male|female|other)", message, re.IGNORECASE)
+        phone_match = re.search(r"my phone( number)? is (\d{10,15})", message, re.IGNORECASE)
+        address_match = re.search(r"my address is ([^\.\n]+)", message, re.IGNORECASE)
+        with transaction.atomic():
+            if name_match:
+                patient.name = name_match.group(1).strip()
+                updated = True
+            if age_match:
+                # Calculate date_of_birth from age
+                from datetime import date, timedelta
+                age = int(age_match.group(1))
+                today = date.today()
+                dob = date(today.year - age, today.month, today.day)
+                patient.date_of_birth = dob
+                updated = True
+            if gender_match:
+                patient.gender = gender_match.group(1).capitalize()
+                updated = True
+            if phone_match:
+                patient.phone = phone_match.group(2)
+                updated = True
+            if address_match:
+                patient.address = address_match.group(1).strip()
+                updated = True
+            if updated:
+                patient.save()
 
 
 class LogoutView(APIView):

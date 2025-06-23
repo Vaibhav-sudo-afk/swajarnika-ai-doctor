@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
-from .models import Doctor, Patient, Visit, Test, Medication, FileUpload, AIChatMessage, AIPrompt
+from .models import Doctor, Patient, Visit, Test, Medication, FileUpload, AIChatMessage, AIPrompt, ChatSession
 from django.shortcuts import get_object_or_404
 from django import forms
 import random
@@ -22,7 +22,7 @@ import json
 from . import models
 from django.contrib import messages
 from django.db.models.functions import TruncDate
-from django.db.models import Count
+from django.db.models import Count, Max, Q
 
 # First define the decorators
 
@@ -647,25 +647,30 @@ def patient_ai_chat(request):
     return render(request, 'core/patient/ai_chat.html')
 
 
+@login_required
 @doctor_required
 def doctor_patient_chats(request, patient_id):
     patient = get_object_or_404(Patient, id=patient_id, doctor=request.user.doctor)
+    session_id = request.GET.get('session_id')
     
-    # Get all chat messages and group by date
-    chat_messages = AIChatMessage.objects.filter(patient=patient).order_by('-created_at')
+    # Get all chat sessions for this patient
+    chat_sessions = ChatSession.objects.filter(patient=patient).annotate(
+        message_count=Count('messages'),
+        last_message=Max('messages__message')
+    ).order_by('-started_at')
     
-    # Group messages by date
-    messages_by_date = {}
-    for msg in chat_messages:
-        date = msg.created_at.date()
-        if date not in messages_by_date:
-            messages_by_date[date] = []
-        messages_by_date[date].append(msg)
+    # Get current session and its messages
+    current_session = None
+    messages = []
+    if session_id:
+        current_session = get_object_or_404(ChatSession, id=session_id, patient=patient)
+        messages = AIChatMessage.objects.filter(session=current_session).order_by('created_at')
     
     context = {
         'patient': patient,
-        'messages_by_date': messages_by_date,
-        'total_messages': chat_messages.count(),
+        'chat_sessions': chat_sessions,
+        'current_session': current_session,
+        'messages': messages,
     }
     
     return render(request, 'core/doctor/patient_chats.html', context)

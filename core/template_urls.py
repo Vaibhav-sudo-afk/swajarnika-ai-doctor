@@ -49,6 +49,8 @@ urlpatterns = [
          template_views.doctor_visit_delete, name='doctor_visit_delete'),
     path('doctor/patient/<int:patient_id>/file/upload/',
          template_views.doctor_file_upload, name='doctor_file_upload'),
+    path('doctor/patient/<int:patient_id>/chats/',
+         template_views.doctor_patient_chats, name='doctor_patient_chats'),
     path('doctor/file/<int:file_id>/delete/',
          template_views.doctor_file_delete, name='doctor_file_delete'),
     path('doctor/visit/<int:visit_id>/update/',
