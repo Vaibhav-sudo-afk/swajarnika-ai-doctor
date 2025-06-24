@@ -30,6 +30,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'swajarnika.onrender.com',
     '127.0.0.1',
+    'https://swajarnika-x5yk.onrender.com',
 ]
 
 
