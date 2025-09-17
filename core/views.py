@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
-import openai
+import google.generativeai as genai
 from django.contrib.auth import authenticate, login, logout
 from .serializers import DoctorRegisterSerializer, PatientRegisterSerializer, VisitSerializer, FileUploadSerializer
 from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
@@ -12,7 +12,7 @@ import json
 import os
 from django.conf import settings
 from .models import AIChatMessage, FileUpload, Visit, Patient, Doctor, AIPrompt, Medication, ChatSession
-from .utils import format_chat_messages, get_detailed_patient_data, get_file_contents
+from .utils import format_chat_messages, get_detailed_patient_data, get_file_contents, query_gemini_chat, process_file_for_chat, query_gemini_chat, process_file_for_chat
 import tempfile
 import uuid
 from rest_framework.permissions import IsAuthenticated
@@ -33,11 +33,10 @@ from django.db.models import Q, Count, Max
 
 User = get_user_model()
 
-openai.api_key = "sk-lRtbEbMz_nah_M3s-64K1g"
-openai.base_url = "https://chatapi.akash.network/api/v1"
+# Configure Gemini API
+GEMINI_API_KEY = "AIzaSyC6APklLc0G9Ts1KecMXXwUKUsk_gGzF48"
+genai.configure(api_key=GEMINI_API_KEY)
 
-AKASH_API_KEY = "sk-lRtbEbMz_nah_M3s-64K1g"
-AKASH_API_ENDPOINT = "https://chatapi.akash.network/api/v1"
 REQUEST_TIMEOUT = 20
 
 
@@ -138,11 +137,11 @@ class AIInteractView(APIView):
             # Get the patient
             patient = Patient.objects.get(id=patient_id)
 
-            # Format messages for Akash API
+            # Format messages for Gemini API
             messages = format_chat_messages(patient, question)
 
-            # Get AI response from Akash API
-            answer = query_akash_chat(messages)
+            # Get AI response from Gemini API
+            answer = query_gemini_chat(messages)
 
             return Response({'answer': answer})
         except Patient.DoesNotExist:
@@ -269,7 +268,7 @@ class ChatAPIView(APIView):
             # Get historical context for this session
             historical_context = self.get_historical_context(session)
 
-            # Format messages
+            # Format messages for Gemini API
             messages = format_chat_messages(
                 patient=patient,
                 user_message=message,
@@ -277,91 +276,72 @@ class ChatAPIView(APIView):
                 historical_context=historical_context
             )
 
-            # Make direct API call without streaming
-            response = requests.post(
-                "https://chatapi.akash.network/api/v1/chat/completions",
-                json={
-                    "model": "Meta-Llama-3-1-8B-Instruct-FP8",
-                    "messages": messages,
-                    "temperature": 0.7,
-                    "max_tokens": 1024
-                },
-                headers={
-                    "Authorization": "Bearer sk-lRtbEbMz_nah_M3s-64K1g",
-                    "Content-Type": "application/json"
-                }
+            # Get AI response from Gemini API
+            ai_reply = query_gemini_chat(messages)
+
+            # Save AI response
+            ai_message = AIChatMessage.objects.create(
+                patient=patient,
+                session=session,
+                message=ai_reply,
+                is_ai=True
             )
 
-            if response.status_code == 200:
-                ai_reply = response.json()['choices'][0]['message']['content']
+            # Save prompt for tracking
+            AIPrompt.objects.create(
+                patient=patient,
+                visit=Visit.objects.filter(patient=patient).last(),
+                session=session,
+                prompt_text=message,
+                response_text=ai_reply,
+                context_used=get_detailed_patient_data(patient)[:500]
+            )
 
-                # Save AI response
-                ai_message = AIChatMessage.objects.create(
-                    patient=patient,
-                    session=session,
-                    message=ai_reply,
-                    is_ai=True
-                )
-
-                # Save prompt for tracking
-                AIPrompt.objects.create(
-                    patient=patient,
-                    visit=Visit.objects.filter(patient=patient).last(),
-                    session=session,
-                    prompt_text=message,
-                    response_text=ai_reply,
-                    context_used=get_detailed_patient_data(patient)[:500]
-                )
-
-                # Detect patient info changes
-                detected_changes = self.try_update_patient_info(message, patient)
-                if detected_changes and not action:
-                    # Ask user for confirmation before updating
-                    return Response({
-                        'message': ai_reply,
-                        'detected_changes': detected_changes,
-                        'session_id': session.id,
-                        'file_processed': bool(uploaded_file),
-                        'require_confirmation': True
-                    }, status=status.HTTP_200_OK)
-                # If user confirms changes
-                if action == 'apply_changes' and confirm_changes:
-                    with transaction.atomic():
-                        for field, value in confirm_changes.items():
-                            if field == 'date_of_birth':
-                                from datetime import date
-                                value = date.fromisoformat(value)
-                            setattr(patient, field, value)
-                        patient.save()
-                    # Update all AIPrompt context_used for this patient (across all sessions)
-                    prompts = AIPrompt.objects.filter(patient=patient)
-                    for prompt in prompts:
-                        prompt.context_used = get_detailed_patient_data(patient)[:500]
-                        prompt.save()
-                # If user edits changes
-                if action == 'edit_changes' and edit_changes:
-                    with transaction.atomic():
-                        for field, value in edit_changes.items():
-                            if field == 'date_of_birth':
-                                from datetime import date
-                                value = date.fromisoformat(value)
-                            setattr(patient, field, value)
-                        patient.save()
-                    # Update all AIPrompt context_used for this patient (across all sessions)
-                    prompts = AIPrompt.objects.filter(patient=patient)
-                    for prompt in prompts:
-                        prompt.context_used = get_detailed_patient_data(patient)[:500]
-                        prompt.save()
-                # If user discards, do nothing
+            # Detect patient info changes
+            detected_changes = self.try_update_patient_info(message, patient)
+            if detected_changes and not action:
+                # Ask user for confirmation before updating
                 return Response({
                     'message': ai_reply,
+                    'detected_changes': detected_changes,
                     'session_id': session.id,
-                    'file_processed': bool(uploaded_file)
+                    'file_processed': bool(uploaded_file),
+                    'require_confirmation': True
                 }, status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    'error': f"API Error: {response.status_code}"
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # If user confirms changes
+            if action == 'apply_changes' and confirm_changes:
+                with transaction.atomic():
+                    for field, value in confirm_changes.items():
+                        if field == 'date_of_birth':
+                            from datetime import date
+                            value = date.fromisoformat(value)
+                        setattr(patient, field, value)
+                    patient.save()
+                # Update all AIPrompt context_used for this patient (across all sessions)
+                prompts = AIPrompt.objects.filter(patient=patient)
+                for prompt in prompts:
+                    prompt.context_used = get_detailed_patient_data(patient)[:500]
+                    prompt.save()
+            # If user edits changes
+            if action == 'edit_changes' and edit_changes:
+                with transaction.atomic():
+                    for field, value in edit_changes.items():
+                        if field == 'date_of_birth':
+                            from datetime import date
+                            value = date.fromisoformat(value)
+                        setattr(patient, field, value)
+                    patient.save()
+                # Update all AIPrompt context_used for this patient (across all sessions)
+                prompts = AIPrompt.objects.filter(patient=patient)
+                for prompt in prompts:
+                    prompt.context_used = get_detailed_patient_data(patient)[:500]
+                    prompt.save()
+            # If user discards, do nothing
+            return Response({
+                'message': ai_reply,
+                'session_id': session.id,
+                'file_processed': bool(uploaded_file)
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

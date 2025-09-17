@@ -11,7 +11,7 @@ import random
 import string
 from django.urls import reverse
 from datetime import datetime
-from .utils import get_patient_context, format_chat_messages, get_ai_stream_response, query_akash_chat, get_detailed_patient_data
+from .utils import get_patient_context, format_chat_messages, get_ai_stream_response, query_gemini_chat, get_detailed_patient_data
 from functools import wraps
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods

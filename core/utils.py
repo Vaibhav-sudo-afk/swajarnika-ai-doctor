@@ -12,11 +12,11 @@ import mimetypes
 import PyPDF2
 import io
 from datetime import date
+import google.generativeai as genai
 
-# Akash API configuration
-AKASH_API_ENDPOINT = "https://api.akash.chat/v1"
-# Should be moved to settings.py in production
-AKASH_API_KEY = "sk-kSOuRSNOgj1XmRUm6rk48A"
+# Gemini API configuration
+GEMINI_API_KEY = "AIzaSyC6APklLc0G9Ts1KecMXXwUKUsk_gGzF48"
+genai.configure(api_key=GEMINI_API_KEY)
 REQUEST_TIMEOUT = 15  # seconds for normal requests
 DOCUMENT_TIMEOUT = 60  # seconds for document processing
 
@@ -145,16 +145,13 @@ Address: {patient.address if patient.address else 'Not recorded'}
     return context
 
 
-def is_akash_available() -> bool:
-    """Check if Akash API is available"""
+def is_gemini_available() -> bool:
+    """Check if Gemini API is available"""
     try:
-        response = requests.get(
-            f"{AKASH_API_ENDPOINT}/models",
-            headers={"Authorization": f"Bearer {AKASH_API_KEY}"},
-            timeout=2
-        )
-        return response.status_code == 200
-    except:
+        # Try to get available models to test API connectivity
+        models = genai.list_models()
+        return len(list(models)) > 0
+    except Exception:
         return False
 
 
@@ -164,52 +161,48 @@ def get_fallback_response(query: str) -> str:
 
 
 def get_ai_stream_response(messages: List[Dict]) -> Generator[str, None, None]:
-    """Get streaming response from Akash API"""
-    if not is_akash_available():
+    """Get streaming response from Gemini API with rate limiting handling"""
+    if not is_gemini_available():
         yield get_fallback_response("")
         return
 
     try:
-        response = requests.post(
-            f"{AKASH_API_ENDPOINT}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {AKASH_API_KEY}",
-                "Content-Type": "application/json",
-                "Accept": "text/event-stream"
-            },
-            json={
-                "model": "gpt-4",
-                "messages": messages,
-                "stream": True,
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_tokens": 1024
-            },
-            stream=True,
-            timeout=REQUEST_TIMEOUT
-        )
+        # Convert messages to Gemini format
+        chat_history = []
+        user_message = ""
+        
+        for msg in messages:
+            if msg["role"] == "user":
+                user_message = msg["content"]
+            elif msg["role"] == "assistant":
+                chat_history.append({"role": "model", "parts": [msg["content"]]})
+            elif msg["role"] == "system":
+                # Include system message as part of the prompt
+                user_message = f"System: {msg['content']}\n\nUser: {user_message}" if user_message else msg["content"]
 
-        for line in response.iter_lines():
-            if line:
-                if line.startswith(b"data: "):
-                    data = line[6:]  # Remove 'data: ' prefix
-                    if data != b"[DONE]":
-                        try:
-                            json_response = json.loads(data)
-                            if "choices" in json_response and len(json_response["choices"]) > 0:
-                                delta = json_response["choices"][0].get(
-                                    "delta", {})
-                                if "content" in delta:
-                                    yield delta["content"]
-                        except json.JSONDecodeError:
-                            continue
+        # Create model instance
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Start chat with history
+        chat = model.start_chat(history=chat_history)
+        
+        # Generate streaming response
+        response = chat.send_message(user_message, stream=True)
+        
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
 
-    except requests.exceptions.ConnectionError:
-        yield "I apologize, but I'm having trouble connecting to the AI service."
-    except requests.exceptions.Timeout:
-        yield "I apologize, but the AI service is taking too long to respond."
     except Exception as e:
-        yield f"I apologize, but I'm having trouble with the AI service. Error: {str(e)}"
+        error_str = str(e)
+        
+        # Handle specific quota exceeded errors
+        if "429" in error_str or "RATE_LIMIT_EXCEEDED" in error_str or "Quota exceeded" in error_str:
+            yield "I'm currently experiencing high demand and have reached my API usage limits. Please try again in a few minutes."
+        elif "403" in error_str or "API_KEY_INVALID" in error_str:
+            yield "I'm experiencing technical difficulties with my AI service configuration. Please contact support."
+        else:
+            yield f"I apologize, but I'm having trouble with the AI service. Please try again in a moment."
 
 
 def format_chat_messages(patient, user_message=None, file_content=None, language=None, historical_context=None):
@@ -390,52 +383,67 @@ SECURITY AND PRIVACY:
     return messages
 
 
-def query_akash_chat(messages: List[Dict[str, Any]]) -> str:
-    """Get response from Akash chat API"""
+def query_gemini_chat(messages: List[Dict[str, Any]]) -> str:
+    """Get response from Gemini chat API with rate limiting and error handling"""
     try:
-        if not is_akash_available():
+        if not is_gemini_available():
             return get_fallback_response("")
 
-        response = requests.post(
-            f"{AKASH_API_ENDPOINT}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {AKASH_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4",
-                "messages": messages,
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "max_tokens": 1024
-            },
-            timeout=REQUEST_TIMEOUT
+        # Convert messages to Gemini format
+        chat_history = []
+        user_message = ""
+        system_prompt = ""
+        
+        for msg in messages:
+            if msg["role"] == "system":
+                system_prompt = msg["content"]
+            elif msg["role"] == "user":
+                user_message = msg["content"]
+            elif msg["role"] == "assistant":
+                chat_history.append({"role": "model", "parts": [msg["content"]]})
+
+        # Create model instance with system prompt as instruction
+        model = genai.GenerativeModel(
+            'gemini-1.5-flash',
+            system_instruction=system_prompt if system_prompt else None
         )
-
-        if response.status_code != 200:
-            return f"Sorry, there was an error connecting to the AI service. Status code: {response.status_code}"
-
-        response_data = response.json()
-
-        if 'choices' in response_data and len(response_data['choices']) > 0:
-            return response_data['choices'][0]['message']['content']
-        else:
-            return "I don't have an answer for that question."
+        
+        # Start chat with history
+        chat = model.start_chat(history=chat_history)
+        
+        # Generate response
+        response = chat.send_message(user_message)
+        
+        return response.text
 
     except Exception as e:
-        return f"Sorry, an error occurred while generating a response: {str(e)}"
+        error_str = str(e)
+        
+        # Handle specific quota exceeded errors
+        if "429" in error_str or "RATE_LIMIT_EXCEEDED" in error_str or "Quota exceeded" in error_str:
+            return "I'm currently experiencing high demand and have reached my API usage limits. Please try again in a few minutes. In the meantime, I can still provide general medical guidance based on the information you've shared."
+        
+        # Handle other API errors gracefully
+        elif "403" in error_str or "API_KEY_INVALID" in error_str:
+            return "I'm experiencing technical difficulties with my AI service configuration. Please contact support for assistance."
+        
+        elif "400" in error_str:
+            return "I had trouble processing your request. Could you please rephrase your question?"
+        
+        else:
+            return f"I apologize, but I'm currently experiencing technical difficulties. Please try again in a moment, or contact support if the issue persists."
 
 
 def is_vision_available() -> bool:
     """Check if vision capabilities are available"""
-    # Akash API handles vision models automatically
+    # Gemini has built-in vision capabilities
     return True
 
 
 def get_best_vision_model() -> Optional[str]:
     """Get the best available vision model for document processing"""
-    # Akash API handles vision models automatically
-    return "gpt-4-vision-preview"
+    # Gemini uses built-in vision capabilities
+    return "gemini-1.5-flash"
 
 
 def extract_text_from_pdf(pdf_path: str) -> Tuple[str, str]:
@@ -557,26 +565,40 @@ def extract_text_with_vision_model(file_path: str, file_type: Optional[str], vis
             }
         ]
 
-        # Call Akash API
-        response = requests.post(
-            f"{AKASH_API_ENDPOINT}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {AKASH_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4-vision-preview",
-                "messages": messages,
-                "max_tokens": 4096,
-                "temperature": 0.1
-            },
-            timeout=DOCUMENT_TIMEOUT
-        )
+        # Call Gemini API for vision processing
+        try:
+            # For image files, use Pillow to open
+            if file_type and file_type.startswith('image/'):
+                import PIL.Image
+                image = PIL.Image.open(file_path)
+                
+                # Create model instance for vision processing
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                # Generate response with image
+                response = model.generate_content([
+                    "Extract all text from this image and provide it in a clean, readable format. If this is a medical document, preserve all medical terminology, dates, numbers, and structure.",
+                    image
+                ])
+                
+                return response.text, "gemini-vision"
+            else:
+                # For PDFs and other documents, first try text extraction
+                if file_path.lower().endswith('.pdf'):
+                    pdf_text, method = extract_text_from_pdf(file_path)
+                    if "Error" not in pdf_text:
+                        return pdf_text, method
+                
+                # If text extraction fails, try to convert to image and use vision
+                # For now, return text extraction result
+                return extract_text_from_pdf(file_path)
 
-        if response.status_code == 200:
-            return response.json()["choices"][0]["message"]["content"], "gpt-4-vision"
-        else:
-            return f"Failed to extract text: API responded with code {response.status_code}", "vision_failed"
+        except Exception as e:
+            # Fallback to text extraction if vision fails
+            if file_path.lower().endswith('.pdf'):
+                return extract_text_from_pdf(file_path)
+            else:
+                return f"Error processing document: {str(e)}", "error"
 
     except Exception as e:
         return f"Error extracting document text: {str(e)}", "vision_error"
