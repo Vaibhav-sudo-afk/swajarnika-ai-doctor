@@ -7,8 +7,9 @@ dj-rest-auth==7.0.1
 djangorestframework_simplejwt==5.4.0
 
 # Database
+#
 mysql-connector-python==8.0.33
-psycopg2-binary==2.9.10
+#psycopg2-binary==2.9.10
 
 # File Processing
 PyPDF2==3.0.1
